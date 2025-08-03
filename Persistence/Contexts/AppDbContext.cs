@@ -71,6 +71,9 @@ namespace Persistence.Contexts
                 sb.Property(s => s.PaylasimTutar)
                   .HasPrecision(18, 2);
             });
+
+            modelBuilder.Entity<HouseMember>()
+    .HasKey(hm => new { hm.HouseId, hm.UserId });
         }
     }
 }

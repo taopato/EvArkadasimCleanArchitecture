@@ -1,5 +1,4 @@
-﻿// Yol: Domain/Entities/Expense.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Domain.Entities
@@ -7,18 +6,17 @@ namespace Domain.Entities
     public class Expense
     {
         public int Id { get; set; }
-        public string Tur { get; set; }
-        public decimal Tutar { get; set; }
-        public int HouseId { get; set; }
-        public House House { get; set; }
-        public int OdeyenUserId { get; set; }
-        public User OdeyenUser { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public decimal Tutar { get; set; }                        // Toplam tutar
+        public decimal OrtakHarcamaTutari { get; set; }           // Kişi başı ortak pay
         public int KaydedenUserId { get; set; }
-        public User KaydedenUser { get; set; }
-        public DateTime Tarih { get; set; }
-        public decimal OrtakHarcamaTutari { get; set; }
+        public User KaydedenUser { get; set; } = null!;
+        public int OdeyenUserId { get; set; }
+        public User OdeyenUser { get; set; } = null!;
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
-        public List<PersonalExpense> SahsiHarcama { get; set; }
-        public ICollection<Share> Shares { get; set; }
+        // Opsiyonel: harcama sonrası oluşacak paylaşımlar
+        public ICollection<Share> Shares { get; set; } = new List<Share>();
+        public ICollection<PersonalExpense> PersonalExpenses { get; set; } = new List<PersonalExpense>();
     }
 }

@@ -3,11 +3,12 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Persistence; // AddPersistenceServices uzantýsýný getirir
+using Persistence;                // AddPersistenceServices uzantýsýný getirir
 using Core.Security.JWT;
 using Application.Features.Auths.Commands.SendVerificationCode;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Contexts;
+using Microsoft.OpenApi.Models;  // Swagger için
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +17,6 @@ builder.Services.AddPersistenceServices(builder.Configuration);
 
 // 2) MediatR — tüm handler’larý tarayacak
 builder.Services.AddMediatR(typeof(SendVerificationCodeCommand).Assembly);
-
 
 // 3) AutoMapper
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
@@ -27,7 +27,6 @@ builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 // 5) JWT
 var tokenOptions = builder.Configuration
     .GetSection("TokenOptions")
-
     .Get<TokenOptions>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -42,14 +41,47 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = tokenOptions.Audience,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(
-                                          Encoding.UTF8.GetBytes(tokenOptions.SecurityKey))
+                Encoding.UTF8.GetBytes(tokenOptions.SecurityKey))
         };
     });
 
 // 6) MVC, Swagger, CORS
 builder.Services.AddControllers();
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "EvArkadasim API", Version = "v1" });
+
+    // JWT Bearer için Swagger ayarlarý
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Bearer token. \"Bearer {token}\" formatýnda gönderin."
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id   = "Bearer"
+                },
+                Scheme = "Bearer",
+                Name   = "Bearer",
+                In     = ParameterLocation.Header,
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 builder.Services.AddCors(p =>
 {
     p.AddPolicy("AllowAll", x => x
@@ -60,12 +92,14 @@ builder.Services.AddCors(p =>
 
 var app = builder.Build();
 
+// 7) Otomatik migration
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
 
+// 8) Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -73,6 +107,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseCors("AllowAll");
 
 app.UseAuthentication();

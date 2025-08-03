@@ -29,6 +29,8 @@ namespace Persistence
                     configuration.GetConnectionString("DefaultConnection")
                 )
             );
+            services.AddScoped<IExpenseRepository, EfExpenseRepository>();
+            services.AddScoped<IHouseRepository, EfHouseRepository>();
 
             return services;
         }
