@@ -1,23 +1,35 @@
-using Core.Security.JWT;
+using MediatR;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Persistence;               // PersistenceServiceRegistration
+using Persistence; // AddPersistenceServices uzantýsýný getirir
+using Core.Security.JWT;
+using Application.Features.Auths.Commands.SendVerificationCode;
 using Microsoft.EntityFrameworkCore;
-using Persistence.Security.JWT;  // JwtHelper
-using Application;               // ApplicationServiceRegistration (eðer varsa)
+using Persistence.Contexts;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Persistence & Application katmanlarýný kaydet
+// 1) Persistence (DbContext, Repos, MailService, JwtHelper, vs.)
 builder.Services.AddPersistenceServices(builder.Configuration);
 
-// 2. JWT ayarlarýný al
+// 2) MediatR — tüm handler’larý tarayacak
+builder.Services.AddMediatR(typeof(SendVerificationCodeCommand).Assembly);
+
+
+// 3) AutoMapper
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
+
+// 4) FluentValidation
+builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+
+// 5) JWT
 var tokenOptions = builder.Configuration
     .GetSection("TokenOptions")
+
     .Get<TokenOptions>();
 
-// 3. Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
     {
@@ -29,22 +41,43 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = tokenOptions.Issuer,
             ValidAudience = tokenOptions.Audience,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey =
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenOptions.SecurityKey))
+            IssuerSigningKey = new SymmetricSecurityKey(
+                                          Encoding.UTF8.GetBytes(tokenOptions.SecurityKey))
         };
     });
 
+// 6) MVC, Swagger, CORS
 builder.Services.AddControllers();
-builder.Services.AddSwaggerGen();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddCors(p =>
+{
+    p.AddPolicy("AllowAll", x => x
+        .AllowAnyOrigin()
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+});
 
 var app = builder.Build();
-app.UseSwagger();
-app.UseSwaggerUI();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
-app.UseAuthentication();  // ?? hatasýz çalýþmasý için en azýndan bir kere!
+app.UseCors("AllowAll");
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 app.Run();
