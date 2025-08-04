@@ -1,21 +1,33 @@
+ï»¿// EvArkadasim.API/Program.cs
+
 using MediatR;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Persistence;                // AddPersistenceServices uzantýsýný getirir
+using Persistence;                // AddPersistenceServices uzantÄ±sÄ±nÄ± getirir
 using Core.Security.JWT;
 using Application.Features.Auths.Commands.SendVerificationCode;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Contexts;
-using Microsoft.OpenApi.Models;  // Swagger için
+using Microsoft.OpenApi.Models;
+
+// â–¼ EKLENENLER: Repository arayÃ¼zleri ve implementasyon namespaceâ€™leri
+using Application.Services.Repositories;
+using Persistence.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1) Persistence (DbContext, Repos, MailService, JwtHelper, vs.)
 builder.Services.AddPersistenceServices(builder.Configuration);
 
-// 2) MediatR — tüm handler’larý tarayacak
+// â–º REPO KAYITLARI
+builder.Services.AddScoped<IExpenseRepository, EfExpenseRepository>();
+builder.Services.AddScoped<IPersonalExpenseRepository, EfPersonalExpenseRepository>();
+builder.Services.AddScoped<IShareRepository, EfShareRepository>();
+builder.Services.AddScoped<IPaymentRepository, EfPaymentRepository>();
+
+// 2) MediatR â€” tÃ¼m handlerâ€™larÄ± tarayacak
 builder.Services.AddMediatR(typeof(SendVerificationCodeCommand).Assembly);
 
 // 3) AutoMapper
@@ -53,7 +65,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "EvArkadasim API", Version = "v1" });
 
-    // JWT Bearer için Swagger ayarlarý
+    // JWT Bearer iÃ§in Swagger ayarlarÄ±
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -61,7 +73,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "JWT Bearer token. \"Bearer {token}\" formatýnda gönderin."
+        Description = "JWT Bearer token. \"Bearer {token}\" formatÄ±nda gÃ¶nderin."
     });
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -89,6 +101,14 @@ builder.Services.AddCors(p =>
         .AllowAnyHeader()
         .AllowAnyMethod());
 });
+///////////////////////////////////
+builder.Services.AddScoped<IExpenseRepository, EfExpenseRepository>();
+builder.Services.AddScoped<IPersonalExpenseRepository, EfPersonalExpenseRepository>();
+builder.Services.AddScoped<IShareRepository, EfShareRepository>();
+builder.Services.AddScoped<IHouseMemberRepository, EfHouseMemberRepository>();
+builder.Services.AddAutoMapper(typeof(Program)); // Bu varsa sorun deÄŸil
+
+///////////////////////////////////
 
 var app = builder.Build();
 

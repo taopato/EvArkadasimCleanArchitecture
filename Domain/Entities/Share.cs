@@ -1,14 +1,17 @@
-﻿// Yol: Domain/Entities/Share.cs
+﻿using System;
+
 namespace Domain.Entities
 {
     public class Share
     {
         public int Id { get; set; }
-        public int HarcamaId { get; set; }
-        public Expense Harcama { get; set; }
-        public int PaylasimUserId { get; set; }
-        public User PaylasimUser { get; set; }
-        public string PaylasimTuru { get; set; }
+
+        public int ExpenseId { get; set; }
+        public Expense Expense { get; set; } = null!;
+
+        public int UserId { get; set; }
+        public User User { get; set; } = null!;
+
         public decimal PaylasimTutar { get; set; }
     }
 }

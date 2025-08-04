@@ -6,8 +6,8 @@ namespace Application.Services.Repositories
 {
     public interface IVerificationCodeRepository
     {
-        Task<VerificationCode> GetByEmailAsync(string email);
-        Task AddOrUpdateAsync(VerificationCode entity);
+        Task<VerificationCode> AddAsync(VerificationCode entity);
+        Task<VerificationCode?> GetByEmailAndCodeAsync(string email, string code);
         Task DeleteAsync(VerificationCode entity);
     }
 }

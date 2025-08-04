@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using Application.Features.Houses.Queries.GetHouseMembersWithDebts;
 
 namespace WebAPI.Controllers
 {
@@ -53,5 +54,16 @@ namespace WebAPI.Controllers
             await _mediator.Send(new AddHouseMemberCommand { HouseId = id, UserId = userId });
             return NoContent();
         }
+
+        [HttpGet("GetHouseMembersWithDebts/{houseId}")]
+        public async Task<IActionResult> GetMembersWithDebts(int houseId)
+        {
+            var list = await _mediator.Send(
+                new GetHouseMembersWithDebtsQuery { HouseId = houseId });
+            return Ok(list);
+        }
+
+
+
     }
 }

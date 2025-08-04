@@ -31,6 +31,9 @@ namespace Persistence
             );
             services.AddScoped<IExpenseRepository, EfExpenseRepository>();
             services.AddScoped<IHouseRepository, EfHouseRepository>();
+            services.AddScoped<IPaymentRepository, EfPaymentRepository>();
+            services.AddScoped<IHouseRepository, EfHouseRepository>();
+            services.AddScoped<IShareRepository, EfShareRepository>();
 
             return services;
         }

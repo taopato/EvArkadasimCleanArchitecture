@@ -1,26 +1,35 @@
 ﻿using AutoMapper;
 using MediatR;
+using Core.Utilities.Results;
+using Application.Services.Repositories; // ✅ Doğru namespace
 using Application.Features.Expenses.Dtos;
-using Application.Services.Repositories;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Application.Features.Expenses.Queries.GetExpenseList
 {
-    public class GetExpenseListQueryHandler : IRequestHandler<GetExpenseListQuery, List<ExpenseDto>>
+    public class GetExpenseListQueryHandler
+        : IRequestHandler<GetExpenseListQuery, Response<List<ExpenseDto>>>
     {
-        private readonly IExpenseRepository _expenseRepository;
         private readonly IMapper _mapper;
+        private readonly IExpenseRepository _expenseRepository;
 
-        public GetExpenseListQueryHandler(IExpenseRepository expenseRepository, IMapper mapper)
+        public GetExpenseListQueryHandler(
+            IMapper mapper,
+            IExpenseRepository expenseRepository)
         {
-            _expenseRepository = expenseRepository;
             _mapper = mapper;
+            _expenseRepository = expenseRepository;
         }
 
-        public async Task<List<ExpenseDto>> Handle(GetExpenseListQuery request, CancellationToken cancellationToken)
+        public async Task<Response<List<ExpenseDto>>> Handle(
+            GetExpenseListQuery request,
+            CancellationToken cancellationToken)
         {
-            var list = await _expenseRepository.GetAllAsync();
-            return _mapper.Map<List<ExpenseDto>>(list);
+            var entities = await _expenseRepository.GetListAsync();
+            var dtos = _mapper.Map<List<ExpenseDto>>(entities);
+            return new Response<List<ExpenseDto>>(dtos, true);
         }
     }
 }

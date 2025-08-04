@@ -1,8 +1,9 @@
-﻿// Core/Interfaces/IMailService.cs
+﻿using System.Threading.Tasks;
+
 namespace Core.Interfaces
 {
     public interface IMailService
     {
-        void SendVerificationCode(string toEmail, string code);
+        Task SendEmailAsync(string to, string subject, string body);
     }
 }

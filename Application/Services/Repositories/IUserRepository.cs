@@ -11,6 +11,9 @@ namespace Application.Services.Repositories
         Task<User> AddAsync(User user); // <== dönüş türü Task<User> olmalı
         Task UpdateAsync(User user);
         Task DeleteAsync(User user);
+        Task<User?> GetByEmailAsync(string email);
+
+
 
     }
 }

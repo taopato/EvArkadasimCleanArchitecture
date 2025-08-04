@@ -1,7 +1,9 @@
-﻿using Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Application.Services.Repositories;
+using Domain.Entities;
 using Persistence.Contexts;
+using Microsoft.EntityFrameworkCore;
 
 namespace Persistence.Repositories
 {
@@ -24,11 +26,16 @@ namespace Persistence.Repositories
             return await _context.Users.FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        public async Task<User> AddAsync(User user) // ✅ Dönüş tipi düzeltildi
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            return await _context.Users.FirstOrDefaultAsync(x => x.Email == email);
+        }
+
+        public async Task<User> AddAsync(User user) // ✅ Dönüş tipi ve kayıt işlemi
         {
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
-            return user; // ✅ Eklenen kullanıcıyı geri döndürüyoruz
+            return user;
         }
 
         public async Task UpdateAsync(User user)

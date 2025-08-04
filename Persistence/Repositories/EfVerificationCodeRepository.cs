@@ -1,8 +1,9 @@
 ﻿// Persistence/Repositories/EfVerificationCodeRepository.cs
+using System.Threading.Tasks;
 using Application.Services.Repositories;
 using Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 using Persistence.Contexts;
+using Microsoft.EntityFrameworkCore;
 
 namespace Persistence.Repositories
 {
@@ -11,21 +12,17 @@ namespace Persistence.Repositories
         private readonly AppDbContext _context;
         public EfVerificationCodeRepository(AppDbContext context) => _context = context;
 
-        public async Task<VerificationCode> GetByEmailAsync(string email)
-            => await _context.VerificationCodes
-                .FirstOrDefaultAsync(vc => vc.Email == email);
-
-        public async Task AddOrUpdateAsync(VerificationCode entity)
+        public async Task<VerificationCode> AddAsync(VerificationCode entity)
         {
-            var existing = await GetByEmailAsync(entity.Email);
-            if (existing == null)
-                await _context.VerificationCodes.AddAsync(entity);
-            else
-            {
-                existing.Code = entity.Code;
-                existing.CreatedAt = entity.CreatedAt;
-            }
+            var added = await _context.VerificationCodes.AddAsync(entity);
             await _context.SaveChangesAsync();
+            return added.Entity;
+        }
+
+        public async Task<VerificationCode?> GetByEmailAndCodeAsync(string email, string code)
+        {
+            return await _context.VerificationCodes
+                .FirstOrDefaultAsync(x => x.Email == email && x.Code == code);
         }
 
         public async Task DeleteAsync(VerificationCode entity)
