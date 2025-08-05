@@ -7,8 +7,8 @@ namespace Application.Services.Repositories
     public interface IUserRepository
     {
         Task<User?> GetByIdAsync(int id);
-        Task<List<User>> GetAllAsync();
-        Task<User> AddAsync(User user); // <== dönüş türü Task<User> olmalı
+        Task<List<User>> GetAllAsync(); // ✅ Yalnızca bir kez
+        Task<User> AddAsync(User user);
         Task UpdateAsync(User user);
         Task DeleteAsync(User user);
         Task<User?> GetByEmailAsync(string email);

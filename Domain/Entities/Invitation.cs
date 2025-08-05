@@ -12,5 +12,11 @@ namespace Domain.Entities
         public DateTime SentAt { get; set; }
 
         public House House { get; set; }
+        public string Status { get; set; } = "Pending";
+        public DateTime? ExpiresAt { get; set; }
+        public int? AcceptedByUserId { get; set; }
+        public DateTime AcceptedAt { get; set; }
+        
+
     }
 }

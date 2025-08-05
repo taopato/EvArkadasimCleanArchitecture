@@ -18,5 +18,10 @@ namespace Persistence.Repositories
             await _context.HouseMembers
                           .Where(hm => hm.HouseId == houseId)
                           .ToListAsync();
+        public IQueryable<HouseMember> Query()
+        {
+            return _context.HouseMembers.AsQueryable();
+        }
+
     }
 }

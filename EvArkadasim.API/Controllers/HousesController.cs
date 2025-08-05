@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using Application.Features.Houses.Queries.GetHouseMembersWithDebts;
+using Application.Features.Invitations.Commands.SendInvitation;
+using Application.Features.Invitations.Dtos;
+using Application.Features.Houses.Commands.AcceptInvitation;
+using Application.Features.Houses.Queries.GetHouseMembers;
 
 namespace WebAPI.Controllers
 {
@@ -63,6 +67,35 @@ namespace WebAPI.Controllers
             return Ok(list);
         }
 
+        [HttpPost("{houseId}/invitations")]
+        public async Task<IActionResult> SendInvitation(int houseId, [FromBody] SendInvitationRequestDto request)
+        {
+            var command = new SendInvitationCommand
+            {
+                HouseId = houseId,
+                Email = request.Email
+            };
+
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpPost("AcceptInvitation")]
+        public async Task<IActionResult> AcceptInvitation([FromBody] AcceptInvitationCommand command)
+        {
+            var success = await _mediator.Send(command);
+            if (!success)
+                return BadRequest("Davet kodu geçersiz veya zaman aşımına uğramış.");
+
+            return Ok("Davet başarıyla kabul edildi.");
+        }
+
+        [HttpGet("{houseId}/members")]
+        public async Task<IActionResult> GetHouseMembers(int houseId)
+        {
+            var result = await _mediator.Send(new GetHouseMembersQuery { HouseId = houseId });
+            return Ok(result);
+        }
 
 
     }

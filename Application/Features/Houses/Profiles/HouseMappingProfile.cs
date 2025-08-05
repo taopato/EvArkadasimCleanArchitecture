@@ -20,7 +20,6 @@ namespace Application.Features.Houses.Profiles
                                src.User.FirstName + " " + src.User.LastName))
                 .ForMember(dest => dest.Email,
                            opt => opt.MapFrom(src => src.User.Email));
-            // UserId ve JoinedDate gibi basit alanlar otomatik eşlenir
         }
     }
 }

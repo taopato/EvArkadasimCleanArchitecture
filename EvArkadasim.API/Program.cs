@@ -11,10 +11,12 @@ using Application.Features.Auths.Commands.SendVerificationCode;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Contexts;
 using Microsoft.OpenApi.Models;
-
-// ▼ EKLENENLER: Repository arayüzleri ve implementasyon namespace’leri
 using Application.Services.Repositories;
 using Persistence.Repositories;
+using Application.Features.Houses.Profiles;
+
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -107,7 +109,10 @@ builder.Services.AddScoped<IPersonalExpenseRepository, EfPersonalExpenseReposito
 builder.Services.AddScoped<IShareRepository, EfShareRepository>();
 builder.Services.AddScoped<IHouseMemberRepository, EfHouseMemberRepository>();
 builder.Services.AddAutoMapper(typeof(Program)); // Bu varsa sorun değil
-
+builder.Services.AddAutoMapper(typeof(HouseMappingProfile).Assembly);
+builder.Services.AddScoped<IInvitationRepository, EfInvitationRepository>();
+builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddAutoMapper(typeof(HouseMappingProfile).Assembly);
 ///////////////////////////////////
 
 var app = builder.Build();

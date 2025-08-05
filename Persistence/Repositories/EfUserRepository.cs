@@ -49,5 +49,6 @@ namespace Persistence.Repositories
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
         }
+
     }
 }

@@ -8,5 +8,8 @@ namespace Application.Services.Repositories
     public interface IHouseMemberRepository
     {
         Task<List<HouseMember>> GetByHouseIdAsync(int houseId);
+        IQueryable<HouseMember> Query();
+
+
     }
 }
