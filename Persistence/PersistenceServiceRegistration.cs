@@ -1,10 +1,13 @@
 ﻿using Application.Services.Repositories;  // IUserRepository
+using Core.Interfaces;
 using Core.Security.JWT;                  // ITokenHelper
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Persistence.Contexts;
 using Persistence.Repositories;
-using Persistence.Security.JWT;            // EfUserRepository
+using Persistence.Security.JWT;
+using Persistence.Services;            // EfUserRepository
 
 namespace Persistence
 {
@@ -19,6 +22,18 @@ namespace Persistence
 
             services.AddSingleton<ITokenHelper, JwtHelper>();
             services.AddScoped<IUserRepository, EfUserRepository>();
+            services.AddScoped<IMailService, MailService>();
+            services.AddScoped<IVerificationCodeRepository, EfVerificationCodeRepository>();
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(
+                    configuration.GetConnectionString("DefaultConnection")
+                )
+            );
+            services.AddScoped<IExpenseRepository, EfExpenseRepository>();
+            services.AddScoped<IHouseRepository, EfHouseRepository>();
+            services.AddScoped<IPaymentRepository, EfPaymentRepository>();
+            services.AddScoped<IHouseRepository, EfHouseRepository>();
+            services.AddScoped<IShareRepository, EfShareRepository>();
 
             return services;
         }

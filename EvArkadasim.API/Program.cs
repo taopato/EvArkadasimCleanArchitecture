@@ -1,23 +1,48 @@
-using Core.Security.JWT;
+ï»¿// EvArkadasim.API/Program.cs
+
+using MediatR;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Persistence;               // PersistenceServiceRegistration
+using Persistence;                // AddPersistenceServices uzantÄ±sÄ±nÄ± getirir
+using Core.Security.JWT;
+using Application.Features.Auths.Commands.SendVerificationCode;
 using Microsoft.EntityFrameworkCore;
-using Persistence.Security.JWT;  // JwtHelper
-using Application;               // ApplicationServiceRegistration (eðer varsa)
+using Persistence.Contexts;
+using Microsoft.OpenApi.Models;
+using Application.Services.Repositories;
+using Persistence.Repositories;
+using Application.Features.Houses.Profiles;
+
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Persistence & Application katmanlarýný kaydet
+// 1) Persistence (DbContext, Repos, MailService, JwtHelper, vs.)
 builder.Services.AddPersistenceServices(builder.Configuration);
 
-// 2. JWT ayarlarýný al
+// â–º REPO KAYITLARI
+builder.Services.AddScoped<IExpenseRepository, EfExpenseRepository>();
+builder.Services.AddScoped<IPersonalExpenseRepository, EfPersonalExpenseRepository>();
+builder.Services.AddScoped<IShareRepository, EfShareRepository>();
+builder.Services.AddScoped<IPaymentRepository, EfPaymentRepository>();
+
+// 2) MediatR â€” tÃ¼m handlerâ€™larÄ± tarayacak
+builder.Services.AddMediatR(typeof(SendVerificationCodeCommand).Assembly);
+
+// 3) AutoMapper
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
+
+// 4) FluentValidation
+builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+
+// 5) JWT
 var tokenOptions = builder.Configuration
     .GetSection("TokenOptions")
     .Get<TokenOptions>();
 
-// 3. Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
     {
@@ -29,22 +54,90 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = tokenOptions.Issuer,
             ValidAudience = tokenOptions.Audience,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey =
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenOptions.SecurityKey))
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(tokenOptions.SecurityKey))
         };
     });
 
+// 6) MVC, Swagger, CORS
 builder.Services.AddControllers();
-builder.Services.AddSwaggerGen();
+
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "EvArkadasim API", Version = "v1" });
+
+    // JWT Bearer iÃ§in Swagger ayarlarÄ±
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Bearer token. \"Bearer {token}\" formatÄ±nda gÃ¶nderin."
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id   = "Bearer"
+                },
+                Scheme = "Bearer",
+                Name   = "Bearer",
+                In     = ParameterLocation.Header,
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+builder.Services.AddCors(p =>
+{
+    p.AddPolicy("AllowAll", x => x
+        .AllowAnyOrigin()
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+});
+///////////////////////////////////
+builder.Services.AddScoped<IExpenseRepository, EfExpenseRepository>();
+builder.Services.AddScoped<IPersonalExpenseRepository, EfPersonalExpenseRepository>();
+builder.Services.AddScoped<IShareRepository, EfShareRepository>();
+builder.Services.AddScoped<IHouseMemberRepository, EfHouseMemberRepository>();
+builder.Services.AddAutoMapper(typeof(Program)); // Bu varsa sorun deÄŸil
+builder.Services.AddAutoMapper(typeof(HouseMappingProfile).Assembly);
+builder.Services.AddScoped<IInvitationRepository, EfInvitationRepository>();
+builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddAutoMapper(typeof(HouseMappingProfile).Assembly);
+///////////////////////////////////
 
 var app = builder.Build();
-app.UseSwagger();
-app.UseSwaggerUI();
+
+// 7) Otomatik migration
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
+// 8) Middleware
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
-app.UseAuthentication();  // ?? hatasýz çalýþmasý için en azýndan bir kere!
+
+app.UseCors("AllowAll");
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 app.Run();

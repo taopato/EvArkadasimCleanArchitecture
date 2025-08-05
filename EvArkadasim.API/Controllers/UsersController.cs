@@ -1,5 +1,6 @@
 ﻿using Application.Features.Users.Commands.Create;
 using Application.Features.Users.Dtos;
+using Application.Features.Users.Queries.GetAllUsers;
 using Application.Features.Users.Queries.GetUserList;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -30,5 +31,11 @@ namespace WebAPI.Controllers
             return Created("", result);
         }
 
+        [HttpGet("GetAllUsers")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var result = await _mediator.Send(new GetAllUsersQuery());
+            return Ok(result.Data);
+        }
     }
 }

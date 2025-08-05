@@ -1,0 +1,12 @@
+﻿namespace Application.Features.Payments.Dtos
+{
+    public class PaymentDto
+    {
+        public int Id { get; set; }
+        public int HouseId { get; set; }
+        public int BorcluUserId { get; set; }
+        public int AlacakliUserId { get; set; }
+        public decimal Tutar { get; set; }
+        public DateTime CreatedDate { get; set; }
+    }
+}
