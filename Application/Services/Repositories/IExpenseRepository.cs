@@ -15,5 +15,7 @@ namespace Application.Services.Repositories
         Task<Expense?> GetByIdAsync(int id);
         Task DeleteAsync(Expense entity);
         Task<Expense> UpdateAsync(Expense entity); // ✅ Geri dönüş tipi Task<Expense>
+        IQueryable<Expense> Query();
+
     }
 }

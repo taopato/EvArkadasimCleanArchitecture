@@ -23,5 +23,7 @@ namespace Domain.Entities
 
         public ICollection<PersonalExpense> PersonalExpenses { get; set; } = new List<PersonalExpense>();
         public ICollection<Share> Shares { get; set; } = new List<Share>();
+        public virtual User? UserOdeyen { get; set; }  // Odeyen kullanıcı
+
     }
 }

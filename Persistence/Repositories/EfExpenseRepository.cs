@@ -73,5 +73,9 @@ namespace Persistence.Repositories
             await _context.SaveChangesAsync();
             return entity;
         }
+        public IQueryable<Expense> Query()
+        {
+            return _context.Expenses.AsQueryable();
+        }
     }
 }
