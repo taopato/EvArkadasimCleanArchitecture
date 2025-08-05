@@ -75,6 +75,14 @@ namespace Persistence.Contexts
             modelBuilder.Entity<HouseMember>()
     .HasKey(hm => new { hm.HouseId, hm.UserId });
 
+            modelBuilder.Entity<House>()
+    .HasOne(h => h.CreatorUser)
+    .WithMany()
+    .HasForeignKey(h => h.CreatorUserId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+
+
             modelBuilder.Entity<Expense>()
     .HasOne(e => e.UserOdeyen)
     .WithMany()

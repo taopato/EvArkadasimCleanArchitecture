@@ -11,5 +11,7 @@ namespace Domain.Entities
 
         // Bir ev grubunun üyeleri
         public ICollection<HouseMember> HouseMembers { get; set; } = new List<HouseMember>();
+        public int CreatorUserId { get; set; }
+        public virtual User? CreatorUser { get; set; }
     }
 }

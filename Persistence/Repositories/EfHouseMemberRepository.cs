@@ -23,5 +23,6 @@ namespace Persistence.Repositories
             return _context.HouseMembers.AsQueryable();
         }
 
+
     }
 }

@@ -13,6 +13,7 @@ using Application.Features.Invitations.Dtos;
 using Application.Features.Houses.Commands.AcceptInvitation;
 using Application.Features.Houses.Queries.GetHouseMembers;
 using Application.Features.Houses.Queries.GetUserDebts;
+using Application.Features.Houses.Queries.GetUserHouses;
 
 namespace WebAPI.Controllers
 {
@@ -113,6 +114,16 @@ namespace WebAPI.Controllers
             return Ok(result.Data);
         }
 
+        [HttpGet("GetUserHouses/{userId}")]
+        public async Task<IActionResult> GetUserHouses(int userId)
+        {
+            var result = await _mediator.Send(new GetUserHousesQuery { UserId = userId });
+
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok(result.Data);
+        }
 
     }
 }
