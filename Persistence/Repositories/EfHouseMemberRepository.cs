@@ -1,28 +1,35 @@
-﻿// Persistence/Repositories/EfHouseMemberRepository.cs
-using Application.Services.Repositories;
-using Domain.Entities;
-using Persistence.Contexts;
+﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Persistence.Contexts;
+using Application.Services.Repositories;
 
 namespace Persistence.Repositories
 {
     public class EfHouseMemberRepository : IHouseMemberRepository
     {
         private readonly AppDbContext _context;
-        public EfHouseMemberRepository(AppDbContext context) => _context = context;
 
-        public async Task<List<HouseMember>> GetByHouseIdAsync(int houseId) =>
-            await _context.HouseMembers
-                          .Where(hm => hm.HouseId == houseId)
-                          .ToListAsync();
+        public EfHouseMemberRepository(AppDbContext context)
+        {
+            _context = context;
+        }
+
         public IQueryable<HouseMember> Query()
         {
             return _context.HouseMembers.AsQueryable();
         }
 
+        public async Task<List<HouseMember>> GetByHouseIdAsync(int houseId)
+        {
+            return await _context.HouseMembers
+                .Where(h => h.HouseId == houseId)
+                .Include(h => h.User)
+                .ToListAsync();
+        }
 
+        public Task<House> GetByIdWithMembersAsync(int houseId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

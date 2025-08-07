@@ -1,5 +1,7 @@
 ﻿using MediatR;
 using Application.Features.Expenses.Dtos;
+using Domain.Enums; // ✅ Enum'u kullanabilmek için eklenmeli
+using System;
 
 namespace Application.Features.Expenses.Commands.CreateExpense
 {
@@ -11,7 +13,10 @@ namespace Application.Features.Expenses.Commands.CreateExpense
         public int OdeyenUserId { get; set; }
         public int KaydedenUserId { get; set; }
         public decimal OrtakHarcamaTutari { get; set; }
-        public List<PersonalExpenseDto> SahsiHarcamalar { get; set; } = new();
+        public DateTime Date { get; set; }
 
+        public PaylasimTuru PaylasimTuru { get; set; } // ✅ EKLENECEK ALAN
+
+        public List<PersonalExpenseDto> SahsiHarcamalar { get; set; } = new();
     }
 }

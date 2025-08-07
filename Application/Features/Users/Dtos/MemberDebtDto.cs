@@ -8,5 +8,6 @@ namespace Application.Features.Houses.Dtos
         public string Email { get; set; } = string.Empty;
         public decimal Alacak { get; set; }
         public decimal Borc { get; set; }
+        
     }
 }

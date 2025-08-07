@@ -6,6 +6,7 @@ namespace Domain.Entities
     public class Expense
     {
         public int Id { get; set; }
+
         public string Description { get; set; } = string.Empty;  // “Tur” olarak map ediyoruz
         public decimal Tutar { get; set; }
         public decimal OrtakHarcamaTutari { get; set; }
@@ -23,7 +24,5 @@ namespace Domain.Entities
 
         public ICollection<PersonalExpense> PersonalExpenses { get; set; } = new List<PersonalExpense>();
         public ICollection<Share> Shares { get; set; } = new List<Share>();
-        public virtual User? UserOdeyen { get; set; }  // Odeyen kullanıcı
-
     }
 }

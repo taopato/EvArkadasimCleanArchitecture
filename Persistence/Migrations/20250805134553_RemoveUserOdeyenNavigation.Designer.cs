@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Contexts;
 
@@ -11,9 +12,11 @@ using Persistence.Contexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250805134553_RemoveUserOdeyenNavigation")]
+    partial class RemoveUserOdeyenNavigation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,49 +24,6 @@ namespace Persistence.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("Domain.Entities.Expense", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("HouseId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("KaydedenUserId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OdeyenUserId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("OrtakHarcamaTutari")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Tutar")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("HouseId");
-
-                    b.HasIndex("KaydedenUserId");
-
-                    b.HasIndex("OdeyenUserId");
-
-                    b.ToTable("Expenses");
-                });
 
             modelBuilder.Entity("Domain.Entities.House", b =>
                 {
@@ -223,9 +183,6 @@ namespace Persistence.Migrations
                     b.Property<int>("ExpenseId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PaylasimTuru")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("PaylasimTutar")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -269,6 +226,49 @@ namespace Persistence.Migrations
                     b.ToTable("VerificationCodes");
                 });
 
+            modelBuilder.Entity("Expense", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("HouseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("KaydedenUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OdeyenUserId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("OrtakHarcamaTutari")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Tutar")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HouseId");
+
+                    b.HasIndex("KaydedenUserId");
+
+                    b.HasIndex("OdeyenUserId");
+
+                    b.ToTable("Expenses");
+                });
+
             modelBuilder.Entity("User", b =>
                 {
                     b.Property<int>("Id")
@@ -302,33 +302,6 @@ namespace Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Expense", b =>
-                {
-                    b.HasOne("Domain.Entities.House", "House")
-                        .WithMany()
-                        .HasForeignKey("HouseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("User", "KaydedenUser")
-                        .WithMany()
-                        .HasForeignKey("KaydedenUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("User", "OdeyenUser")
-                        .WithMany()
-                        .HasForeignKey("OdeyenUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("House");
-
-                    b.Navigation("KaydedenUser");
-
-                    b.Navigation("OdeyenUser");
                 });
 
             modelBuilder.Entity("Domain.Entities.House", b =>
@@ -401,7 +374,7 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.PersonalExpense", b =>
                 {
-                    b.HasOne("Domain.Entities.Expense", "Expense")
+                    b.HasOne("Expense", "Expense")
                         .WithMany("PersonalExpenses")
                         .HasForeignKey("ExpenseId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -420,7 +393,7 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.Share", b =>
                 {
-                    b.HasOne("Domain.Entities.Expense", "Expense")
+                    b.HasOne("Expense", "Expense")
                         .WithMany("Shares")
                         .HasForeignKey("ExpenseId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -437,16 +410,43 @@ namespace Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Expense", b =>
+            modelBuilder.Entity("Expense", b =>
                 {
-                    b.Navigation("PersonalExpenses");
+                    b.HasOne("Domain.Entities.House", "House")
+                        .WithMany()
+                        .HasForeignKey("HouseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Shares");
+                    b.HasOne("User", "KaydedenUser")
+                        .WithMany()
+                        .HasForeignKey("KaydedenUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("User", "OdeyenUser")
+                        .WithMany()
+                        .HasForeignKey("OdeyenUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("House");
+
+                    b.Navigation("KaydedenUser");
+
+                    b.Navigation("OdeyenUser");
                 });
 
             modelBuilder.Entity("Domain.Entities.House", b =>
                 {
                     b.Navigation("HouseMembers");
+                });
+
+            modelBuilder.Entity("Expense", b =>
+                {
+                    b.Navigation("PersonalExpenses");
+
+                    b.Navigation("Shares");
                 });
 
             modelBuilder.Entity("User", b =>

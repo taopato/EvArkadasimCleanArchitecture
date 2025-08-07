@@ -22,5 +22,9 @@ namespace Persistence.Repositories
             _context.PersonalExpenses.Remove(entity);
             await _context.SaveChangesAsync();
         }
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 }

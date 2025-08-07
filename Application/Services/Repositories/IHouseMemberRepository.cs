@@ -9,6 +9,8 @@ namespace Application.Services.Repositories
     {
         Task<List<HouseMember>> GetByHouseIdAsync(int houseId);
         IQueryable<HouseMember> Query();
+        Task<House> GetByIdWithMembersAsync(int houseId);
+
 
 
     }

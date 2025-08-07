@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Contexts;
 
@@ -11,9 +12,11 @@ using Persistence.Contexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250805120730_AddCreatorUserIdToHouse_Correct")]
+    partial class AddCreatorUserIdToHouse_Correct
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -46,6 +49,9 @@ namespace Persistence.Migrations
                     b.Property<int>("OdeyenUserId")
                         .HasColumnType("int");
 
+                    b.Property<int>("OdeyenUserId1")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("OrtakHarcamaTutari")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -61,6 +67,8 @@ namespace Persistence.Migrations
                     b.HasIndex("KaydedenUserId");
 
                     b.HasIndex("OdeyenUserId");
+
+                    b.HasIndex("OdeyenUserId1");
 
                     b.ToTable("Expenses");
                 });
@@ -223,9 +231,6 @@ namespace Persistence.Migrations
                     b.Property<int>("ExpenseId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PaylasimTuru")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("PaylasimTutar")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -318,10 +323,16 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("User", "OdeyenUser")
+                    b.HasOne("User", "UserOdeyen")
                         .WithMany()
                         .HasForeignKey("OdeyenUserId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("User", "OdeyenUser")
+                        .WithMany()
+                        .HasForeignKey("OdeyenUserId1")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("House");
@@ -329,6 +340,8 @@ namespace Persistence.Migrations
                     b.Navigation("KaydedenUser");
 
                     b.Navigation("OdeyenUser");
+
+                    b.Navigation("UserOdeyen");
                 });
 
             modelBuilder.Entity("Domain.Entities.House", b =>

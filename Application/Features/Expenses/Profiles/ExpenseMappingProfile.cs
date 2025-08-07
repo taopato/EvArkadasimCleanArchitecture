@@ -14,6 +14,14 @@ namespace Application.Features.Expenses.Profiles
             CreateMap<CreateExpenseCommand, Expense>()
                 .ForMember(dest => dest.OrtakHarcamaTutari, opt => opt.Ignore())
                 .ReverseMap();
+
+            // ⬇ Eksik olan map burada
+            CreateMap<Expense, ExpenseListDto>()
+                .ForMember(dest => dest.Tur, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.KayitTarihi, opt => opt.MapFrom(src => src.CreatedDate))
+                .ForMember(dest => dest.OdeyenKullaniciAdi, opt => opt.MapFrom(src => src.OdeyenUser.FirstName + " " + src.OdeyenUser.LastName))
+                .ForMember(dest => dest.KaydedenKullaniciAdi, opt => opt.MapFrom(src => src.KaydedenUser.FirstName + " " + src.KaydedenUser.LastName));
+
         }
     }
 }

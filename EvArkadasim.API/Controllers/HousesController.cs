@@ -11,7 +11,6 @@ using Application.Features.Houses.Queries.GetHouseMembersWithDebts;
 using Application.Features.Invitations.Commands.SendInvitation;
 using Application.Features.Invitations.Dtos;
 using Application.Features.Houses.Commands.AcceptInvitation;
-using Application.Features.Houses.Queries.GetHouseMembers;
 using Application.Features.Houses.Queries.GetUserDebts;
 using Application.Features.Houses.Queries.GetUserHouses;
 
@@ -61,13 +60,7 @@ namespace WebAPI.Controllers
             return NoContent();
         }
 
-        [HttpGet("GetHouseMembersWithDebts/{houseId}")]
-        public async Task<IActionResult> GetMembersWithDebts(int houseId)
-        {
-            var list = await _mediator.Send(
-                new GetHouseMembersWithDebtsQuery { HouseId = houseId });
-            return Ok(list);
-        }
+
 
         [HttpPost("{houseId}/invitations")]
         public async Task<IActionResult> SendInvitation(int houseId, [FromBody] SendInvitationRequestDto request)
@@ -95,7 +88,7 @@ namespace WebAPI.Controllers
         [HttpGet("{houseId}/members")]
         public async Task<IActionResult> GetHouseMembers(int houseId)
         {
-            var result = await _mediator.Send(new GetHouseMembersQuery { HouseId = houseId });
+            var result = await _mediator.Send(new GetHouseMembersWithDebtsQuery { HouseId = houseId });
             return Ok(result);
         }
 

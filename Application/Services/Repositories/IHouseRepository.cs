@@ -11,5 +11,6 @@ namespace Application.Services.Repositories
         Task<House> GetByIdAsync(int id);
         Task AddMemberAsync(HouseMember member);
         Task RemoveMemberAsync(int houseId, int userId);
+
     }
 }

@@ -25,7 +25,7 @@ namespace Application.Features.Houses.Queries.GetUserDebts
                 .Query()
                 .Include(e => e.PersonalExpenses)
                 .ThenInclude(p => p.User)
-                .Include(e => e.UserOdeyen)
+                .Include(e => e.OdeyenUser)
                 .Where(e => e.HouseId == request.HouseId)
                 .ToListAsync(cancellationToken);
 
@@ -49,7 +49,7 @@ namespace Application.Features.Houses.Queries.GetUserDebts
                         Tur = e.Description,
                         Tutar = e.Tutar,
                         OdeyenUserId = e.OdeyenUserId,
-                        OdeyenKullaniciAdi = $"{e.UserOdeyen?.FirstName} {e.UserOdeyen?.LastName}",
+                        OdeyenKullaniciAdi = $"{e.OdeyenUser?.FirstName} {e.OdeyenUser?.LastName}",
                         PaylasimTutari = paylasimTutari
                     });
                 }

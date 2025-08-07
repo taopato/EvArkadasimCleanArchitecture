@@ -11,5 +11,8 @@ namespace Application.Features.Expenses.Dtos
         public string Message { get; set; } = "Harcama başarıyla eklendi.";
         public List<PersonalExpenseDto> PersonalExpenses { get; set; } = new();
         public List<ShareDto> Shares { get; set; } = new();
+        public int HouseId { get; set; }
+        public string Description { get; set; } = string.Empty;
+
     }
 }

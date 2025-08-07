@@ -20,8 +20,13 @@ namespace Persistence.Repositories
         public async Task<Expense> AddAsync(Expense expense)
         {
             var added = await _context.Set<Expense>().AddAsync(expense);
-            await _context.SaveChangesAsync();
+            //await _context.SaveChangesAsync(); // ❌ Artık SaveChanges burada değil
             return added.Entity;
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
         }
 
         public async Task<List<Expense>> GetAllAsync()
@@ -67,12 +72,13 @@ namespace Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Expense> UpdateAsync(Expense entity) // ✅ Geri dönüş tipi düzeltildi
+        public async Task<Expense> UpdateAsync(Expense entity)
         {
             _context.Expenses.Update(entity);
             await _context.SaveChangesAsync();
             return entity;
         }
+
         public IQueryable<Expense> Query()
         {
             return _context.Expenses.AsQueryable();

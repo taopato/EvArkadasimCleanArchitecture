@@ -11,4 +11,5 @@ public class User
     public DateTime RegistrationDate { get; set; }
     public ICollection<HouseMember> HouseMembers { get; set; }
 
+
 }

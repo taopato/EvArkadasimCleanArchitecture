@@ -3,7 +3,10 @@ using Domain.Entities;
 
 public interface IShareRepository
 {
+    Task AddRangeAsync(List<Share> shares);
+    Task SaveChangesAsync();
     Task<Share> AddAsync(Share entity);
-    Task DeleteAsync(Share entity);  // eklendi
+    Task DeleteAsync(Share entity);
+
 
 }

@@ -8,5 +8,7 @@ namespace Application.Features.Houses.Queries.GetUserDebts
     {
         public int UserId { get; set; }
         public int HouseId { get; set; }
+
+
     }
 }

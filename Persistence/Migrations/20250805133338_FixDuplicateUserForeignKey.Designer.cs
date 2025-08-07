@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Contexts;
 
@@ -11,9 +12,11 @@ using Persistence.Contexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250805133338_FixDuplicateUserForeignKey")]
+    partial class FixDuplicateUserForeignKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -54,6 +57,9 @@ namespace Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("UserOdeyenId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("HouseId");
@@ -61,6 +67,8 @@ namespace Persistence.Migrations
                     b.HasIndex("KaydedenUserId");
 
                     b.HasIndex("OdeyenUserId");
+
+                    b.HasIndex("UserOdeyenId");
 
                     b.ToTable("Expenses");
                 });
@@ -223,9 +231,6 @@ namespace Persistence.Migrations
                     b.Property<int>("ExpenseId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PaylasimTuru")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("PaylasimTutar")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -324,11 +329,17 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("User", "UserOdeyen")
+                        .WithMany()
+                        .HasForeignKey("UserOdeyenId");
+
                     b.Navigation("House");
 
                     b.Navigation("KaydedenUser");
 
                     b.Navigation("OdeyenUser");
+
+                    b.Navigation("UserOdeyen");
                 });
 
             modelBuilder.Entity("Domain.Entities.House", b =>

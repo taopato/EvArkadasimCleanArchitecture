@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Enums;
+using System;
 
 namespace Domain.Entities
 {
@@ -13,5 +14,7 @@ namespace Domain.Entities
         public User User { get; set; } = null!;
 
         public decimal PaylasimTutar { get; set; }
+        public PaylasimTuru PaylasimTuru { get; set; } // enum türünde zorunlu alan
+
     }
 }

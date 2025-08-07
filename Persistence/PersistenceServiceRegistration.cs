@@ -1,4 +1,5 @@
-﻿using Application.Services.Repositories;  // IUserRepository
+﻿using Application.Features.Expenses.Profiles;
+using Application.Services.Repositories;  // IUserRepository
 using Core.Interfaces;
 using Core.Security.JWT;                  // ITokenHelper
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,7 @@ namespace Persistence
             services.AddScoped<IPaymentRepository, EfPaymentRepository>();
             services.AddScoped<IHouseRepository, EfHouseRepository>();
             services.AddScoped<IShareRepository, EfShareRepository>();
+            services.AddAutoMapper(typeof(ExpenseMappingProfile).Assembly);
 
             return services;
         }

@@ -29,11 +29,13 @@ namespace Persistence.Repositories
                              .ToListAsync();
 
         public async Task<House> GetByIdAsync(int id)
-            => await _context.Houses
-                             .Include(h => h.HouseMembers)
-                             .ThenInclude(m => m.User)
-                             .FirstOrDefaultAsync(h => h.Id == id)
-               ?? throw new KeyNotFoundException("House bulunamadı.");
+        {
+            return await _context.Houses
+                .Include(h => h.HouseMembers)
+                    .ThenInclude(m => m.User)
+                .FirstOrDefaultAsync(h => h.Id == id)
+                ?? throw new KeyNotFoundException("House bulunamadı.");
+        }
 
         public async Task AddMemberAsync(HouseMember member)
         {

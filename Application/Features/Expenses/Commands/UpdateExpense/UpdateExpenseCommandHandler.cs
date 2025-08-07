@@ -1,6 +1,4 @@
-﻿// Application/Features/Expenses/Commands/UpdateExpense/UpdateExpenseCommandHandler.cs
-
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Features.Expenses.Commands.UpdateExpense;
@@ -70,6 +68,10 @@ namespace Application.Features.Expenses.Commands.UpdateExpense
                     UserId = m.UserId,
                     PaylasimTutar = request.Dto.OrtakHarcamaTutari
                 });
+
+            // ✅ SaveChanges unutulmasın
+            await _shareRepo.SaveChangesAsync();
+            await _personalRepo.SaveChangesAsync();
 
             return Unit.Value;
         }

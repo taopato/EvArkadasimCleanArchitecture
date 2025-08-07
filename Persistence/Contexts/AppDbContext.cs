@@ -84,7 +84,7 @@ namespace Persistence.Contexts
 
 
             modelBuilder.Entity<Expense>()
-    .HasOne(e => e.UserOdeyen)
+    .HasOne(e => e.OdeyenUser)
     .WithMany()
     .HasForeignKey(e => e.OdeyenUserId)
     .OnDelete(DeleteBehavior.Restrict);
