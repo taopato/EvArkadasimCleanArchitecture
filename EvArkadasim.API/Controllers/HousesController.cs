@@ -21,6 +21,7 @@ namespace WebAPI.Controllers
     [Authorize]
     public class HousesController : ControllerBase
     {
+
         private readonly IMediator _mediator;
         public HousesController(IMediator mediator) => _mediator = mediator;
 
@@ -92,20 +93,20 @@ namespace WebAPI.Controllers
             return Ok(result);
         }
 
+
         [HttpGet("GetUserDebts/{userId}/{houseId}")]
         public async Task<IActionResult> GetUserDebts(int userId, int houseId)
         {
-            var result = await _mediator.Send(new GetUserDebtsQuery
-            {
-                UserId = userId,
-                HouseId = houseId
-            });
+            var result = await _mediator.Send(new GetUserDebtsQuery(userId, houseId));
 
             if (!result.Success)
                 return BadRequest(result.Message);
 
             return Ok(result.Data);
         }
+
+
+
 
         [HttpGet("GetUserHouses/{userId}")]
         public async Task<IActionResult> GetUserHouses(int userId)

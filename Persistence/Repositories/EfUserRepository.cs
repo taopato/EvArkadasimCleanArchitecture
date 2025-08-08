@@ -49,6 +49,12 @@ namespace Persistence.Repositories
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
         }
+        public async Task<Dictionary<int, string>> GetAllUserDictionaryAsync()
+        {
+            return await _context.Users
+                                 .Select(u => new { u.Id, FullName = u.FirstName + " " + u.LastName })
+                                 .ToDictionaryAsync(x => x.Id, x => x.FullName.Trim());
+        }
 
     }
 }

@@ -10,6 +10,8 @@ namespace Domain.Entities
         public string Description { get; set; } = string.Empty;  // “Tur” olarak map ediyoruz
         public decimal Tutar { get; set; }
         public decimal OrtakHarcamaTutari { get; set; }
+        public bool IsActive { get; set; } = true;
+
 
         public int HouseId { get; set; }
         public House House { get; set; } = null!;

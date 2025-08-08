@@ -12,6 +12,7 @@ namespace Application.Services.Repositories
         Task UpdateAsync(User user);
         Task DeleteAsync(User user);
         Task<User?> GetByEmailAsync(string email);
+        Task<Dictionary<int, string>> GetAllUserDictionaryAsync();
 
 
 
