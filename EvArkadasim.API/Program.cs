@@ -14,6 +14,7 @@ using Microsoft.OpenApi.Models;
 using Application.Services.Repositories;
 using Persistence.Repositories;
 using Application.Features.Houses.Profiles;
+using System.Reflection;
 
 
 
@@ -113,6 +114,10 @@ builder.Services.AddAutoMapper(typeof(HouseMappingProfile).Assembly);
 builder.Services.AddScoped<IInvitationRepository, EfInvitationRepository>();
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddAutoMapper(typeof(HouseMappingProfile).Assembly);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddAutoMapper(Assembly.Load("Application"));
+
+
 ///////////////////////////////////
 
 var app = builder.Build();
@@ -130,6 +135,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseStaticFiles(); // wwwroot altını servis eder
 
 app.UseHttpsRedirection();
 

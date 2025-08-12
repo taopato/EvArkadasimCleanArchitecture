@@ -4,19 +4,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using Application.Services.Repositories;
 using Domain.Entities;
-using Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Persistence.Contexts;
 
 namespace Persistence.Repositories
 {
     public class EfPaymentRepository : IPaymentRepository
     {
         private readonly AppDbContext _context;
+
         public EfPaymentRepository(AppDbContext context) => _context = context;
 
+        // --- MEVCUT METODLARIN ---
         public async Task<List<Payment>> GetAllAsync()
             => await _context.Payments.ToListAsync();
 
@@ -43,6 +42,41 @@ namespace Persistence.Repositories
             return await _context.Payments
                                  .Where(p => p.HouseId == houseId)
                                  .ToListAsync();
+        }
+
+        public IQueryable<Payment> Query()
+        {
+            return _context.Payments.AsQueryable();
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
+
+        // --- YENİ EKLENENLER ---
+        public async Task<Payment?> GetByIdAsync(int id)
+        {
+            return await _context.Payments
+                .Include(p => p.BorcluUser)
+                .Include(p => p.AlacakliUser)
+                .FirstOrDefaultAsync(p => p.Id == id);
+        }
+
+        public async Task<IList<Payment>> GetPendingByAlacakliAsync(int alacakliUserId)
+        {
+            return await _context.Payments
+                .Include(p => p.BorcluUser)
+                .Where(p => p.AlacakliUserId == alacakliUserId
+                         && p.Status == Domain.Enums.PaymentStatus.Pending)
+                .OrderByDescending(p => p.OdemeTarihi)
+                .ToListAsync();
+        }
+
+        public async Task UpdateAsync(Payment entity)
+        {
+            _context.Payments.Update(entity);
+            await _context.SaveChangesAsync();
         }
     }
 }

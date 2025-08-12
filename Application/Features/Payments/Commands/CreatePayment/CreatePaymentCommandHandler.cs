@@ -1,7 +1,9 @@
-﻿using MediatR;
-using Application.Features.Payments.Dtos;
+﻿using Application.Features.Payments.Commands.CreatePayment;
 using Application.Services.Repositories;
 using Domain.Entities;
+using MediatR;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Application.Features.Payments.Commands.CreatePayment
 {
@@ -11,7 +13,9 @@ namespace Application.Features.Payments.Commands.CreatePayment
         private readonly IPaymentRepository _paymentRepo;
 
         public CreatePaymentCommandHandler(IPaymentRepository paymentRepo)
-            => _paymentRepo = paymentRepo;
+        {
+            _paymentRepo = paymentRepo;
+        }
 
         public async Task<CreatedPaymentResponseDto> Handle(
             CreatePaymentCommand request,
@@ -23,10 +27,26 @@ namespace Application.Features.Payments.Commands.CreatePayment
                 BorcluUserId = request.BorcluUserId,
                 AlacakliUserId = request.AlacakliUserId,
                 Tutar = request.Tutar,
+                DekontUrl = request.DekontUrl,
+                OdemeTarihi = DateTime.UtcNow,     // <-- her zaman bugün/şimdi
+                Aciklama = request.Aciklama ?? string.Empty, // NULL gelirse boş string yaz
                 CreatedDate = DateTime.UtcNow
             };
-            var added = await _paymentRepo.AddAsync(payment);
-            return new CreatedPaymentResponseDto { Id = added.Id };
+
+            var created = await _paymentRepo.AddAsync(payment);
+            await _paymentRepo.SaveChangesAsync();
+
+            return new CreatedPaymentResponseDto
+            {
+                Id = created.Id,
+                HouseId = created.HouseId,
+                BorcluUserId = created.BorcluUserId,
+                AlacakliUserId = created.AlacakliUserId,
+                Tutar = created.Tutar,
+                DekontUrl = created.DekontUrl,
+                OdemeTarihi = created.OdemeTarihi,
+                Aciklama = created.Aciklama
+            };
         }
     }
 }

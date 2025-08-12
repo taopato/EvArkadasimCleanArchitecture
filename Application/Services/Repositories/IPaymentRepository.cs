@@ -12,7 +12,11 @@ namespace Application.Services.Repositories
         Task<decimal> GetTotalBorçluAsync(int houseId, int userId);
         Task<Payment> AddAsync(Payment entity);
         Task<List<Payment>> GetByHouseIdAsync(int houseId);
-
+        IQueryable<Payment> Query();
+        Task SaveChangesAsync();
+        Task<Payment?> GetByIdAsync(int id); // tek ödeme
+        Task<IList<Payment>> GetPendingByAlacakliAsync(int alacakliUserId); // bekleyenler
+        Task UpdateAsync(Payment entity);
 
     }
 }

@@ -2,6 +2,7 @@
 using Application.Features.Users.Dtos;
 using Application.Features.Users.Queries.GetAllUsers;
 using Application.Features.Users.Queries.GetUserList;
+using Application.Features.Users.Queries.GetUserPaymentHistory;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -36,6 +37,18 @@ namespace WebAPI.Controllers
         {
             var result = await _mediator.Send(new GetAllUsersQuery());
             return Ok(result.Data);
+        }
+
+        [HttpGet("{userId}/payment-history")]
+        public async Task<IActionResult> PaymentHistory(int userId, int? houseId, int limit = 10)
+        {
+            var res = await _mediator.Send(new GetUserPaymentHistoryQuery
+            {
+                UserId = userId,
+                HouseId = houseId,
+                Limit = limit
+            });
+            return Ok(res);
         }
     }
 }

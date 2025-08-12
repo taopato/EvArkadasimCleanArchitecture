@@ -13,6 +13,7 @@ using Application.Features.Invitations.Dtos;
 using Application.Features.Houses.Commands.AcceptInvitation;
 using Application.Features.Houses.Queries.GetUserDebts;
 using Application.Features.Houses.Queries.GetUserHouses;
+using Application.Features.Houses.Queries.GetSpendingOverview;
 
 namespace WebAPI.Controllers
 {
@@ -117,6 +118,19 @@ namespace WebAPI.Controllers
                 return BadRequest(result.Message);
 
             return Ok(result.Data);
+        }
+
+        [HttpGet("{houseId}/spending-overview")]
+        public async Task<IActionResult> SpendingOverview(int houseId, DateTime? from, DateTime? to, int recentLimit = 10)
+        {
+            var res = await _mediator.Send(new GetSpendingOverviewQuery
+            {
+                HouseId = houseId,
+                From = from,
+                To = to,
+                RecentLimit = recentLimit
+            });
+            return Ok(res);
         }
 
     }
