@@ -25,12 +25,18 @@ namespace EvArkadasim.API.Controllers
         public int BorcluUserId { get; set; }
         public int AlacakliUserId { get; set; }
         public decimal Tutar { get; set; }
+
         // "Cash" | "BankTransfer" (varsayılan BankTransfer)
         public string? PaymentMethod { get; set; } = "BankTransfer";
+
         // BankTransfer’de zorunlu, Cash’te opsiyonel
         public IFormFile? Dekont { get; set; }
+
         public DateTime? OdemeTarihi { get; set; }
         public string? Aciklama { get; set; }
+
+        // 🔽 yeni: katkının hangi cycle için olduğu (opsiyonel bıraktım ama handler’da doğrulamanı öneririm)
+        public int? ChargeId { get; set; }
     }
 
     [ApiController]
@@ -88,7 +94,10 @@ namespace EvArkadasim.API.Controllers
                 PaymentMethod = isCash ? PaymentMethod.Cash : PaymentMethod.BankTransfer,
                 OdemeTarihi = form.OdemeTarihi ?? DateTime.UtcNow,
                 Aciklama = form.Aciklama,
-                DekontUrl = dekontUrl
+                DekontUrl = dekontUrl,
+
+                // 🔽 yeni: chargeId’yi komuta geçir
+                ChargeId = form.ChargeId
             };
 
             var result = await _mediator.Send(cmd);
