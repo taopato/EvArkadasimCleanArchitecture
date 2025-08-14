@@ -16,21 +16,26 @@ using Persistence.Repositories;
 using Application.Features.Houses.Profiles;
 using System.Reflection;
 
-
-
+// ⚠️ Bu namespace şu an projende yoksa derleme hatası verir, o yüzden yoruma aldım.
+// using Application.Features.RecurringCharges.Commands.CreateRecurringCharge;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1) Persistence (DbContext, Repos, MailService, JwtHelper, vs.)
 builder.Services.AddPersistenceServices(builder.Configuration);
 
-// ► REPO KAYITLARI
+// ► REPO KAYITLARI (mevcut olanlar)
 builder.Services.AddScoped<IExpenseRepository, EfExpenseRepository>();
 builder.Services.AddScoped<IPersonalExpenseRepository, EfPersonalExpenseRepository>();
 builder.Services.AddScoped<IShareRepository, EfShareRepository>();
 builder.Services.AddScoped<IPaymentRepository, EfPaymentRepository>();
 
-// 2) MediatR — tüm handler’ları tarayacak
+
+builder.Services.AddScoped<IRecurringChargeRepository, EfRecurringChargeRepository>();
+builder.Services.AddScoped<IChargeCycleRepository,   EfChargeCycleRepository>();
+
+// 2) MediatR — Application assembly’sini tara
+// (MediatR v11 uyumlu; SendVerificationCodeCommand Application assembly’sinde.)
 builder.Services.AddMediatR(typeof(SendVerificationCodeCommand).Assembly);
 
 // 3) AutoMapper
@@ -104,7 +109,9 @@ builder.Services.AddCors(p =>
         .AllowAnyHeader()
         .AllowAnyMethod());
 });
+
 ///////////////////////////////////
+// (Mevcut kayıtların aynen bırakıldı)
 builder.Services.AddScoped<IExpenseRepository, EfExpenseRepository>();
 builder.Services.AddScoped<IPersonalExpenseRepository, EfPersonalExpenseRepository>();
 builder.Services.AddScoped<IShareRepository, EfShareRepository>();
@@ -116,8 +123,6 @@ builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddAutoMapper(typeof(HouseMappingProfile).Assembly);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAutoMapper(Assembly.Load("Application"));
-
-
 ///////////////////////////////////
 
 var app = builder.Build();

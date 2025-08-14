@@ -16,5 +16,7 @@ namespace Application.Features.Payments.Commands.CreatePayment
         public DateTime OdemeTarihi { get; set; }
         public string? Aciklama { get; set; }
         public PaymentMethod PaymentMethod { get; set; } // Enum olacak
+        public int? ChargeId { get; set; }
+
     }
 }

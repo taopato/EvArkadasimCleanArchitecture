@@ -24,6 +24,9 @@ namespace Persistence.Contexts
         public DbSet<LedgerEntry> LedgerEntries { get; set; }
         public DbSet<PaymentAllocation> PaymentAllocations { get; set; }
 
+        public DbSet<RecurringCharge> RecurringCharges { get; set; } = null!;
+        public DbSet<ChargeCycle> ChargeCycles { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -159,6 +162,33 @@ namespace Persistence.Contexts
                 // Payment tablonuzun adı "Payments" ise:
                 pa.HasIndex(x => x.PaymentId);
                 pa.HasIndex(x => x.LedgerEntryId);
+            });
+            ///////////////////////////////
+            modelBuilder.Entity<RecurringCharge>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Type).HasConversion<int>();
+                b.Property(x => x.AmountMode).HasConversion<int>();
+                b.Property(x => x.SplitPolicy).HasConversion<int>();
+                b.Property(x => x.FixedAmount).HasPrecision(18, 2);   // ⬅️ eklendi
+
+            });
+
+            modelBuilder.Entity<ChargeCycle>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Status).HasConversion<int>();
+                b.HasIndex(x => new { x.ContractId, x.Period }).IsUnique();
+                b.Property(x => x.TotalAmount).HasPrecision(18, 2);   // ⬅️ eklendi
+                b.Property(x => x.FundedAmount).HasPrecision(18, 2);  // ⬅️ eklendi
+            });
+
+            modelBuilder.Entity<Payment>(b =>
+            {
+                b.HasOne(p => p.Charge)
+                 .WithMany()
+                 .HasForeignKey(p => p.ChargeId)
+                 .OnDelete(DeleteBehavior.Restrict);
             });
 
 

@@ -37,5 +37,7 @@ namespace Domain.Entities
         public int? ApprovedByUserId { get; set; }
         public DateTime? RejectedDate { get; set; }
         public int? RejectedByUserId { get; set; }
+        public int? ChargeId { get; set; }           // NEW
+        public ChargeCycle? Charge { get; set; }     // NEW (isteğe bağlı navigation)
     }
 }
