@@ -11,5 +11,6 @@
         public DateTime KayitTarihi { get; set; }
         public string OdeyenKullaniciAdi { get; set; } = string.Empty;
         public string KaydedenKullaniciAdi { get; set; } = string.Empty;
+
     }
 }

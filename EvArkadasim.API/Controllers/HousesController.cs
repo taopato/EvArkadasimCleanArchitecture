@@ -1,19 +1,20 @@
-﻿using Application.Features.Houses.Commands.CreateHouse;
+﻿using Application.Features.Houses.Commands.AcceptInvitation;
 using Application.Features.Houses.Commands.AddHouseMember;
+using Application.Features.Houses.Commands.CreateHouse;
 using Application.Features.Houses.Dtos;
 using Application.Features.Houses.Queries.GetHouseDetail;
 using Application.Features.Houses.Queries.GetHouseList;
+using Application.Features.Houses.Queries.GetHouseMembersWithDebts;
+using Application.Features.Houses.Queries.GetSpendingOverview;
+using Application.Features.Houses.Queries.GetUserDebts;
+using Application.Features.Houses.Queries.GetUserHouses;
+using Application.Features.Invitations.Commands.SendInvitation;
+using Application.Features.Invitations.Dtos;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using Application.Features.Houses.Queries.GetHouseMembersWithDebts;
-using Application.Features.Invitations.Commands.SendInvitation;
-using Application.Features.Invitations.Dtos;
-using Application.Features.Houses.Commands.AcceptInvitation;
-using Application.Features.Houses.Queries.GetUserDebts;
-using Application.Features.Houses.Queries.GetUserHouses;
-using Application.Features.Houses.Queries.GetSpendingOverview;
+using System;
+using System.Threading.Tasks;
 
 namespace WebAPI.Controllers
 {
@@ -22,7 +23,6 @@ namespace WebAPI.Controllers
     [Authorize]
     public class HousesController : ControllerBase
     {
-
         private readonly IMediator _mediator;
         public HousesController(IMediator mediator) => _mediator = mediator;
 
@@ -62,8 +62,6 @@ namespace WebAPI.Controllers
             return NoContent();
         }
 
-
-
         [HttpPost("{houseId}/invitations")]
         public async Task<IActionResult> SendInvitation(int houseId, [FromBody] SendInvitationRequestDto request)
         {
@@ -94,30 +92,30 @@ namespace WebAPI.Controllers
             return Ok(result);
         }
 
-
-        [HttpGet("GetUserDebts/{userId}/{houseId}")]
-        public async Task<IActionResult> GetUserDebts(int userId, int houseId)
-        {
-            var result = await _mediator.Send(new GetUserDebtsQuery(userId, houseId));
-
-            if (!result.Success)
-                return BadRequest(result.Message);
-
-            return Ok(result.Data);
-        }
-
-
-
-
+        // ✅ Kullanıcının evlerini getir
         [HttpGet("GetUserHouses/{userId}")]
         public async Task<IActionResult> GetUserHouses(int userId)
         {
             var result = await _mediator.Send(new GetUserHousesQuery { UserId = userId });
-
             if (!result.Success)
                 return BadRequest(result.Message);
+            return Ok(result.Data); // yalnız liste dönüyor
+        }
 
-            return Ok(result.Data);
+        // ✅ Response sarma beklemeyecek şekilde sadeleştirildi
+        [HttpGet("GetUserDebts/{userId:int}/{houseId:int}")]
+        public async Task<IActionResult> GetUserDebts(int userId, int houseId)
+        {
+            var result = await _mediator.Send(new GetUserDebtsQuery(userId, houseId));
+            return Ok(result);
+        }
+
+        // ✅ Tüm kullanıcılar için (ev geneli)
+        [HttpGet("GetUserDebts/{houseId:int}")]
+        public async Task<IActionResult> GetAllUsersDebts(int houseId)
+        {
+            var result = await _mediator.Send(new GetUserDebtsQuery { HouseId = houseId });
+            return Ok(result);
         }
 
         [HttpGet("{houseId}/spending-overview")]
@@ -132,6 +130,5 @@ namespace WebAPI.Controllers
             });
             return Ok(res);
         }
-
     }
 }

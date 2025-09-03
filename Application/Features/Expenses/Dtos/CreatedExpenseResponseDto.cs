@@ -13,6 +13,9 @@ namespace Application.Features.Expenses.Dtos
         public List<ShareDto> Shares { get; set; } = new();
         public int HouseId { get; set; }
         public string Description { get; set; } = string.Empty;
-
+        public int OdeyenUserId { get; set; }
+        public int KaydedenUserId { get; set; }
+        public DateTime KayitTarihi { get; set; }
+        // (Opsiyonel ama faydalı)
     }
 }

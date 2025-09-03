@@ -44,6 +44,7 @@ namespace Persistence
             services.AddScoped<IPaymentReadRepository, EfPaymentReadRepository>();
             services.AddScoped<ILedgerReadRepository, EfLedgerReadRepository>();
             services.AddScoped<IExpenseReadRepository, EfExpenseReadRepository>();
+            services.AddScoped<ILedgerLineRepository, EfLedgerLineRepository>();
 
 
 

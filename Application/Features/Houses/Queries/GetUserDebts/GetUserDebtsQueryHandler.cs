@@ -1,151 +1,98 @@
-﻿// Application/Features/Houses/Queries/GetUserDebts/GetUserDebtsQueryHandler.cs
-
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Application.Features.Houses.Dtos;
 using Application.Services.Repositories;
-using Core.Utilities.Results;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Houses.Queries.GetUserDebts
 {
-    public class GetUserDebtsQueryHandler
-        : IRequestHandler<GetUserDebtsQuery, Response<GetUserDebtsDto>>
+    public class GetUserDebtsQueryHandler : IRequestHandler<GetUserDebtsQuery, GetUserDebtsDto>
     {
-        private readonly IExpenseRepository _expenseRepo;
-        private readonly IUserRepository _userRepo;
-        private readonly IPaymentRepository _paymentRepo;
+        private readonly ILedgerLineRepository _ledgerRepo;
 
-        public GetUserDebtsQueryHandler(
-            IExpenseRepository expenseRepo,
-            IUserRepository userRepo,
-            IPaymentRepository paymentRepo)
+        public GetUserDebtsQueryHandler(ILedgerLineRepository ledgerRepo)
         {
-            _expenseRepo = expenseRepo;
-            _userRepo = userRepo;
-            _paymentRepo = paymentRepo;
+            _ledgerRepo = ledgerRepo;
         }
 
-        public async Task<Response<GetUserDebtsDto>> Handle(
-            GetUserDebtsQuery request,
-            CancellationToken cancellationToken)
+        public async Task<GetUserDebtsDto> Handle(GetUserDebtsQuery request, CancellationToken ct)
         {
-            // 1) Başlangıç DTO
-            var dto = new GetUserDebtsDto
+            var lines = await _ledgerRepo.GetListAsync(l => l.HouseId == request.HouseId && l.IsActive);
+
+            // long tiplerine göre netleme (entity alanları long ise cast hatası olmasın)
+            var pairForward = new Dictionary<(long from, long to), decimal>();
+            var receivableByUser = new Dictionary<long, decimal>();
+            var payableByUser = new Dictionary<long, decimal>();
+
+            foreach (var l in lines)
             {
-                UserId = request.UserId,
-                HouseId = request.HouseId
-            };
+                var key = ((long)l.FromUserId, (long)l.ToUserId);
+                if (!pairForward.ContainsKey(key)) pairForward[key] = 0m;
+                pairForward[key] += l.Amount;
 
-            // 2) Harcamalar (IsActive filtreyi kullanıyorsan aç)
-            var expenses = await _expenseRepo.Query()
-                .Where(e => e.HouseId == request.HouseId /*&& e.IsActive*/)
-                .Include(e => e.Shares)
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
+                var fu = (long)l.FromUserId;
+                var tu = (long)l.ToUserId;
 
-            // 2.5) Ödemeler: önce materialize et, sonra Approved filtrele (enum/string güvenli)
-            var paymentsAll = await _paymentRepo.Query()
-                .Where(p => p.HouseId == request.HouseId)
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
+                if (!payableByUser.ContainsKey(fu)) payableByUser[fu] = 0m;
+                if (!receivableByUser.ContainsKey(tu)) receivableByUser[tu] = 0m;
 
-            var approvedPayments = paymentsAll
-                .Where(p => p.Status != null && p.Status.ToString() == "Approved")
-                .ToList();
+                payableByUser[fu] += l.Amount;
+                receivableByUser[tu] += l.Amount;
+            }
 
-            // 3) User sözlüğü
-            var userDict = await _userRepo.GetAllUserDictionaryAsync();
+            var usersInHouse = new HashSet<long>(
+                lines.Select(l => (long)l.FromUserId).Concat(lines.Select(l => (long)l.ToUserId))
+            );
 
-            // 4) (debtor, creditor) → tutar matriksi
-            var pairDebts = new Dictionary<(int debtor, int creditor), decimal>();
-
-            // 4.a) Harcamalardan doğan borç: borçlu → ödeyen
-            foreach (var exp in expenses)
+            var netPairs = new List<GetUserDebtsDto.PairDebtDto>();
+            foreach (var a in usersInHouse)
             {
-                var creditor = exp.OdeyenUserId; // ödeyen
-
-                foreach (var share in exp.Shares)
+                foreach (var b in usersInHouse)
                 {
-                    var debtor = share.UserId;    // pay sahibi
-                    if (debtor == creditor) continue; // ödeyen kendi payı için borçlanmaz
+                    if (a >= b) continue; // her çifti bir kez
 
-                    var key = (debtor, creditor);
-                    if (!pairDebts.ContainsKey(key))
-                        pairDebts[key] = 0m;
+                    var ab = pairForward.TryGetValue((a, b), out var abSum) ? abSum : 0m;
+                    var ba = pairForward.TryGetValue((b, a), out var baSum) ? baSum : 0m;
+                    var net = ab - ba;
 
-                    pairDebts[key] += share.PaylasimTutar;
-
-                    // İlgili kullanıcı ise detay ekle
-                    if (debtor == request.UserId || creditor == request.UserId)
-                    {
-                        userDict.TryGetValue(creditor, out var creditorName);
-                        dto.Detaylar.Add(new UserDebtDetailDto
-                        {
-                            ExpenseId = exp.Id,
-                            Tur = exp.Description,   // sende alan adı farklıysa uyarlayabilirsin
-                            Tutar = exp.Tutar,
-                            OdeyenUserId = creditor,
-                            OdeyenKullaniciAdi = creditorName ?? creditor.ToString(),
-                            PaylasimTutar = share.PaylasimTutar
-                        });
-                    }
+                    if (net > 0)
+                        netPairs.Add(new GetUserDebtsDto.PairDebtDto { FromUserId = (int)a, ToUserId = (int)b, NetAmount = net });
+                    else if (net < 0)
+                        netPairs.Add(new GetUserDebtsDto.PairDebtDto { FromUserId = (int)b, ToUserId = (int)a, NetAmount = -net });
                 }
             }
 
-            // 4.b) ONAYLANMIŞ ÖDEMELERİ borçtan düş: (borçlu, alacaklı) kenarı azalır
-            foreach (var pay in approvedPayments)
-            {
-                // Alanlar int (nullable değil)
-                int debtor = pay.BorcluUserId;
-                int creditor = pay.AlacakliUserId;
-
-                var key = (debtor, creditor);
-                if (!pairDebts.ContainsKey(key))
-                    pairDebts[key] = 0m;
-
-                pairDebts[key] -= pay.Tutar; // ödeme kadar borç düş
-            }
-
-            // 5) Bu kullanıcıya göre net ( + = alacak, - = borç )
-            var others = pairDebts.Keys
-                .SelectMany(k => new[] { k.debtor, k.creditor })
-                .Distinct()
-                .Where(u => u != request.UserId);
-
-            foreach (var other in others)
-            {
-                var aOwesB = pairDebts.GetValueOrDefault((request.UserId, other), 0m); // ben → other
-                var bOwesA = pairDebts.GetValueOrDefault((other, request.UserId), 0m); // other → ben
-
-                var net = bOwesA - aOwesB; // + ise alacaklıyım, - ise borçluyum
-                if (net == 0m) continue;
-
-                userDict.TryGetValue(other, out var name);
-                dto.KullaniciBazliDurumlar.Add(new KullaniciBazliDurumDto
+            var totals = usersInHouse
+                .Select(u =>
                 {
-                    UserId = other,
-                    FullName = name ?? other.ToString(),
-                    Amount = net
-                });
+                    var rec = receivableByUser.TryGetValue(u, out var r) ? r : 0m;
+                    var pay = payableByUser.TryGetValue(u, out var p) ? p : 0m;
+                    return new GetUserDebtsDto.UserTotalDto
+                    {
+                        UserId = (int)u,
+                        Receivable = rec,
+                        Payable = pay,
+                        Net = rec - pay
+                    };
+                })
+                .OrderByDescending(t => t.Net)
+                .ToList();
+
+            if (request.UserId.HasValue)
+            {
+                var uid = request.UserId.Value;
+                netPairs = netPairs.Where(p => p.FromUserId == uid || p.ToUserId == uid).ToList();
+                totals = totals.Where(t => t.UserId == uid).ToList();
             }
 
-            // 6) Toplamlar
-            dto.ToplamAlacak = dto.KullaniciBazliDurumlar
-                .Where(x => x.Amount > 0)
-                .Sum(x => x.Amount);
-
-            dto.ToplamBorc = -dto.KullaniciBazliDurumlar
-                .Where(x => x.Amount < 0)
-                .Sum(x => x.Amount);
-
-            // NetDurum read-only ise set etmiyoruz (DTO hesaplıyorsa otomatik)
-
-            // 7) Response
-            return new Response<GetUserDebtsDto>(dto, true, string.Empty);
+            return new GetUserDebtsDto
+            {
+                HouseId = request.HouseId,
+                Pairs = netPairs,
+                Totals = totals
+            };
         }
     }
 }

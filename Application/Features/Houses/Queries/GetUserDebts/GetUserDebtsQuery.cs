@@ -1,14 +1,14 @@
-﻿// Application/Features/Houses/Queries/GetUserDebts/GetUserDebtsQuery.cs
-using Application.Features.Houses.Dtos;
-using Core.Utilities.Results;
+﻿using Application.Features.Houses.Dtos;
 using MediatR;
 
 namespace Application.Features.Houses.Queries.GetUserDebts
 {
-    public class GetUserDebtsQuery : IRequest<Response<GetUserDebtsDto>>
+    public class GetUserDebtsQuery : IRequest<GetUserDebtsDto>
     {
-        public int UserId { get; }
-        public int HouseId { get; }
+        public int HouseId { get; set; }
+        public int? UserId { get; set; }
+
+        public GetUserDebtsQuery() { }
 
         public GetUserDebtsQuery(int userId, int houseId)
         {

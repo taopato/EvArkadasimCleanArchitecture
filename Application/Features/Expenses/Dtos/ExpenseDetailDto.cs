@@ -4,5 +4,7 @@
     {
         public List<PersonalExpenseDto> SahsiHarcamalar { get; set; } = new();
         public decimal OrtakHarcamaTutari { get; set; }
+        public string Tur { get; set; } = string.Empty;
+        public DateTime KayitTarihi { get; set; }
     }
 }

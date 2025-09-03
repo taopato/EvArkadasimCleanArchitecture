@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
-using Domain.Enums; // <-- eklendi
+using Domain.Enums;
+using Persistence.Configurations; // <-- eklendi
 
 namespace Persistence.Contexts
 {
@@ -190,7 +191,9 @@ namespace Persistence.Contexts
                  .HasForeignKey(p => p.ChargeId)
                  .OnDelete(DeleteBehavior.Restrict);
             });
-
+            ///////////////////////////////
+            modelBuilder.ApplyConfiguration(new ExpenseConfiguration());
+            modelBuilder.ApplyConfiguration(new LedgerLineConfiguration());
 
 
         }

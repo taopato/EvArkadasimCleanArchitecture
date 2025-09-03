@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Contexts;
 
@@ -11,9 +12,11 @@ using Persistence.Contexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250830153847_Create_Expenses")]
+    partial class Create_Expenses
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -191,18 +194,12 @@ namespace Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<byte>("Category")
-                        .HasColumnType("tinyint");
-
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<int>("HouseId")
                         .HasColumnType("int");
@@ -213,10 +210,6 @@ namespace Persistence.Migrations
                     b.Property<int>("KaydedenUserId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Note")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
                     b.Property<int>("OdeyenUserId")
                         .HasColumnType("int");
 
@@ -224,58 +217,19 @@ namespace Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("ParticipantsJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PeriodMonth")
-                        .IsRequired()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)");
-
-                    b.Property<string>("PersonalBreakdownJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("PostDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<short?>("PreShareDays")
-                        .HasColumnType("smallint");
-
-                    b.Property<Guid?>("RecurrenceBatchKey")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("SplitPolicy")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("Tutar")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<byte>("Type")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("VisibilityMode")
-                        .HasColumnType("tinyint");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("HouseId");
 
                     b.HasIndex("KaydedenUserId");
 
                     b.HasIndex("OdeyenUserId");
 
-                    b.HasIndex("RecurrenceBatchKey")
-                        .HasDatabaseName("IX_Expenses_Batch");
-
-                    b.HasIndex("HouseId", "PeriodMonth")
-                        .HasDatabaseName("IX_Expenses_Period");
-
-                    b.HasIndex("HouseId", "PostDate")
-                        .HasDatabaseName("IX_Expenses_House_Post");
-
-                    b.ToTable("Expenses", (string)null);
+                    b.ToTable("Expenses");
                 });
 
             modelBuilder.Entity("Domain.Entities.House", b =>
@@ -409,61 +363,6 @@ namespace Persistence.Migrations
                     b.HasIndex("HouseId", "FromUserId", "ToUserId", "CreatedAt");
 
                     b.ToTable("LedgerEntries");
-                });
-
-            modelBuilder.Entity("Domain.Entities.LedgerLine", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("sysutcdatetime()");
-
-                    b.Property<int>("ExpenseId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("FromUserId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("HouseId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
-                    b.Property<DateTime>("PostDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("sysutcdatetime()");
-
-                    b.Property<int>("ToUserId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExpenseId")
-                        .HasDatabaseName("IX_Ledger_Expense");
-
-                    b.HasIndex("HouseId", "PostDate")
-                        .HasDatabaseName("IX_Ledger_House_Post");
-
-                    b.HasIndex("HouseId", "FromUserId", "ToUserId", "PostDate")
-                        .HasDatabaseName("IX_Ledger_House_FromTo");
-
-                    b.ToTable("LedgerLines", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Payment", b =>
@@ -839,15 +738,6 @@ namespace Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("House");
-                });
-
-            modelBuilder.Entity("Domain.Entities.LedgerLine", b =>
-                {
-                    b.HasOne("Domain.Entities.Expense", null)
-                        .WithMany()
-                        .HasForeignKey("ExpenseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Entities.Payment", b =>

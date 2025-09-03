@@ -15,6 +15,7 @@ using Application.Services.Repositories;
 using Persistence.Repositories;
 using Application.Features.Houses.Profiles;
 using System.Reflection;
+using System.Text.Json.Serialization;
 
 // ⚠️ Bu namespace şu an projende yoksa derleme hatası verir, o yüzden yoruma aldım.
 // using Application.Features.RecurringCharges.Commands.CreateRecurringCharge;
@@ -30,9 +31,11 @@ builder.Services.AddScoped<IPersonalExpenseRepository, EfPersonalExpenseReposito
 builder.Services.AddScoped<IShareRepository, EfShareRepository>();
 builder.Services.AddScoped<IPaymentRepository, EfPaymentRepository>();
 
-
 builder.Services.AddScoped<IRecurringChargeRepository, EfRecurringChargeRepository>();
-builder.Services.AddScoped<IChargeCycleRepository,   EfChargeCycleRepository>();
+builder.Services.AddScoped<IChargeCycleRepository, EfChargeCycleRepository>();
+
+// ⭐ LedgerLines için DI kaydı (CreateIrregular / DeleteExpense soft-delete vb. kullanıyor)
+builder.Services.AddScoped<ILedgerLineRepository, EfLedgerLineRepository>(); // ⭐ eklendi
 
 // 2) MediatR — Application assembly’sini tara
 // (MediatR v11 uyumlu; SendVerificationCodeCommand Application assembly’sinde.)
@@ -100,6 +103,12 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+
+    // Aynı isimli sınıflardan (farklı namespace) doğan schema çakışmalarını engelle
+    c.CustomSchemaIds(t => t.FullName);                 // ⭐ eklendi
+
+    // Olası aynı route + aynı HTTP verb çakışmalarında ilkini seç (Swagger JSON üretebilsin)
+    c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First()); // ⭐ eklendi
 });
 
 builder.Services.AddCors(p =>
@@ -109,6 +118,18 @@ builder.Services.AddCors(p =>
         .AllowAnyHeader()
         .AllowAnyMethod());
 });
+
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(o =>
+    {
+        // enum'ları hem sayı hem string olarak parse et
+        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+
+        // Döngüsel referanslardan kaynaklı Swagger/JSON hatalarını önle
+        o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;            // ⭐ eklendi
+        o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull; // ⭐ eklendi
+    });
 
 ///////////////////////////////////
 // (Mevcut kayıtların aynen bırakıldı)

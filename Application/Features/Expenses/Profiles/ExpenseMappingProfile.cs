@@ -1,7 +1,8 @@
-﻿using AutoMapper;
-using Domain.Entities;
+﻿// Application/Features/Expenses/Profiles/ExpenseMappingProfile.cs
+using AutoMapper;
 using Application.Features.Expenses.Dtos;
 using Application.Features.Expenses.Commands.CreateExpense;
+using Domain.Entities;
 
 namespace Application.Features.Expenses.Profiles
 {
@@ -9,19 +10,36 @@ namespace Application.Features.Expenses.Profiles
     {
         public ExpenseMappingProfile()
         {
-            CreateMap<Expense, ExpenseDto>().ReverseMap();
-            CreateMap<Expense, CreatedExpenseDto>().ReverseMap();
-            CreateMap<CreateExpenseCommand, Expense>()
-                .ForMember(dest => dest.OrtakHarcamaTutari, opt => opt.Ignore())
-                .ReverseMap();
+            // Entity -> DTO’lar
+            CreateMap<Expense, ExpenseDto>()
+                .ForMember(d => d.Tur, m => m.MapFrom(s => s.Tur))
+                .ForMember(d => d.KayitTarihi, m => m.MapFrom(s => s.KayitTarihi))
+                .ForMember(d => d.OdeyenKullaniciAdi,
+                           m => m.MapFrom(s => s.OdeyenUser != null
+                                ? (s.OdeyenUser.FirstName + " " + s.OdeyenUser.LastName).Trim()
+                                : string.Empty))
+                .ForMember(d => d.KaydedenKullaniciAdi,
+                           m => m.MapFrom(s => s.KaydedenUser != null
+                                ? (s.KaydedenUser.FirstName + " " + s.KaydedenUser.LastName).Trim()
+                                : string.Empty));
 
-            // ⬇ Eksik olan map burada
             CreateMap<Expense, ExpenseListDto>()
-                .ForMember(dest => dest.Tur, opt => opt.MapFrom(src => src.Description))
-                .ForMember(dest => dest.KayitTarihi, opt => opt.MapFrom(src => src.CreatedDate))
-                .ForMember(dest => dest.OdeyenKullaniciAdi, opt => opt.MapFrom(src => src.OdeyenUser.FirstName + " " + src.OdeyenUser.LastName))
-                .ForMember(dest => dest.KaydedenKullaniciAdi, opt => opt.MapFrom(src => src.KaydedenUser.FirstName + " " + src.KaydedenUser.LastName));
+                .ForMember(d => d.Tur, m => m.MapFrom(s => s.Tur))
+                .ForMember(d => d.KayitTarihi, m => m.MapFrom(s => s.KayitTarihi));
 
+            CreateMap<Expense, ExpenseDetailDto>()
+                .ForMember(d => d.Tur, m => m.MapFrom(s => s.Tur))
+                .ForMember(d => d.KayitTarihi, m => m.MapFrom(s => s.KayitTarihi));
+
+            // Command -> Entity (create)
+            CreateMap<CreateExpenseCommand, Expense>()
+                .ForMember(d => d.Tur, m => m.MapFrom(s => s.Tur))
+                .ForMember(d => d.Tutar, m => m.MapFrom(s => s.Tutar))
+                .ForMember(d => d.HouseId, m => m.MapFrom(s => s.HouseId))
+                .ForMember(d => d.OdeyenUserId, m => m.MapFrom(s => s.OdeyenUserId))
+                .ForMember(d => d.KaydedenUserId, m => m.MapFrom(s => s.KaydedenUserId))
+                .ForMember(d => d.OrtakHarcamaTutari, m => m.MapFrom(s => s.OrtakHarcamaTutari))
+                .ForMember(d => d.KayitTarihi, m => m.MapFrom(s => s.Date == default ? System.DateTime.UtcNow : s.Date));
         }
     }
 }

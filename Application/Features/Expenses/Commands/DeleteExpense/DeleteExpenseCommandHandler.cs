@@ -1,22 +1,33 @@
-﻿using MediatR;
+﻿// Application/Features/Expenses/Commands/DeleteExpense/DeleteExpenseCommandHandler.cs
+using MediatR;
 using Application.Services.Repositories;
-using Domain.Entities;
 
 namespace Application.Features.Expenses.Commands.DeleteExpense
 {
-    public class DeleteExpenseCommandHandler
-        : IRequestHandler<DeleteExpenseCommand, Unit>
+    public class DeleteExpenseCommandHandler : IRequestHandler<DeleteExpenseCommand, Unit>
     {
-        private readonly IExpenseRepository _repo;
-        public DeleteExpenseCommandHandler(IExpenseRepository repo) => _repo = repo;
+        private readonly IExpenseRepository _expenseRepo;
+        private readonly ILedgerLineRepository _ledgerRepo;
 
-        public async Task<Unit> Handle(
-            DeleteExpenseCommand request,
-            CancellationToken ct)
+        public DeleteExpenseCommandHandler(IExpenseRepository expenseRepo, ILedgerLineRepository ledgerRepo)
         {
-            var e = await _repo.GetByIdAsync(request.ExpenseId)
+            _expenseRepo = expenseRepo;
+            _ledgerRepo = ledgerRepo;
+        }
+
+        public async Task<Unit> Handle(DeleteExpenseCommand request, CancellationToken ct)
+        {
+            var e = await _expenseRepo.GetByIdAsync(request.ExpenseId)
                     ?? throw new KeyNotFoundException("Expense not found");
-            await _repo.DeleteAsync(e);
+
+            // SOFT DELETE
+            e.IsActive = false;
+            e.UpdatedAt = DateTime.UtcNow;
+            await _expenseRepo.UpdateAsync(e);
+
+            // Ledger satırlarını da pasif yap (varsa)
+            await _ledgerRepo.SoftDeleteByExpenseIdAsync(e.Id, ct);
+
             return Unit.Value;
         }
     }
