@@ -69,7 +69,7 @@ namespace Application.Features.Payments.Commands.CreatePayment
                 AlacakliUserId = request.AlacakliUserId,
                 Tutar = request.Tutar,
                 DekontUrl = request.DekontUrl,
-                OdemeTarihi = DateTime.UtcNow,                  // mevcut davranışını korudum
+                OdemeTarihi = request.OdemeTarihi == default ? DateTime.UtcNow : request.OdemeTarihi,
                 Aciklama = request.Aciklama ?? string.Empty, // null gelirse boş
                 CreatedDate = DateTime.UtcNow,
 

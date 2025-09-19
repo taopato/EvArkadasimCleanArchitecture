@@ -14,44 +14,71 @@ namespace Persistence.Repositories
     public class EfLedgerLineRepository : ILedgerLineRepository
     {
         private readonly AppDbContext _ctx;
-        public EfLedgerLineRepository(AppDbContext context) => _ctx = context;
+        public EfLedgerLineRepository(AppDbContext ctx) { _ctx = ctx; }
 
-        public async Task<LedgerLine> AddAsync(LedgerLine entity, CancellationToken ct = default)
+        public async Task AddAsync(LedgerLine line, CancellationToken ct = default)
         {
-            await _ctx.Set<LedgerLine>().AddAsync(entity, ct);
-            return entity;
+            await _ctx.LedgerLines.AddAsync(line, ct);
         }
 
-        public async Task AddRangeAsync(IEnumerable<LedgerLine> entities, CancellationToken ct = default)
+        public async Task AddRangeAsync(IEnumerable<LedgerLine> lines, CancellationToken ct = default)
         {
-            await _ctx.Set<LedgerLine>().AddRangeAsync(entities, ct);
+            await _ctx.LedgerLines.AddRangeAsync(lines, ct);
         }
 
-        public Task SaveChangesAsync(CancellationToken ct = default) => _ctx.SaveChangesAsync(ct);
-
-        public async Task<IList<LedgerLine>> GetByExpenseIdAsync(int expenseId, CancellationToken ct = default)
+        public async Task UpdateAsync(LedgerLine line, CancellationToken ct = default)
         {
-            return await _ctx.Set<LedgerLine>()
-                .Where(x => x.ExpenseId == expenseId)
-                .ToListAsync(ct);
+            _ctx.LedgerLines.Update(line);
+            await _ctx.SaveChangesAsync(ct);
         }
 
-        public async Task<IList<LedgerLine>> GetListAsync(Expression<Func<LedgerLine, bool>> predicate, CancellationToken ct = default)
-        {
-            return await _ctx.Set<LedgerLine>()
-                .Where(predicate)
-                .ToListAsync(ct);
-        }
+        public Task SaveChangesAsync(CancellationToken ct = default)
+            => _ctx.SaveChangesAsync(ct);
 
-        public async Task<int> SoftDeleteByExpenseIdAsync(int expenseId, CancellationToken ct = default)
+        public Task<LedgerLine?> GetByIdAsync(long id, CancellationToken ct = default)
+            => _ctx.LedgerLines.FirstOrDefaultAsync(x => x.Id == id, ct);
+
+        public Task<List<LedgerLine>> GetListAsync(Expression<Func<LedgerLine, bool>> predicate, CancellationToken ct = default)
+            => _ctx.LedgerLines.Where(predicate).AsNoTracking().ToListAsync(ct);
+
+        public Task<List<LedgerLine>> GetOpenDebtsAsync(int houseId, int userId, CancellationToken ct = default)
+            => _ctx.LedgerLines
+                   .Where(x => x.HouseId == houseId && x.FromUserId == userId && x.IsActive && !x.IsClosed)
+                   .AsNoTracking()
+                   .ToListAsync(ct);
+
+        public Task<List<LedgerLine>> GetOpenCreditsAsync(int houseId, int userId, CancellationToken ct = default)
+            => _ctx.LedgerLines
+                   .Where(x => x.HouseId == houseId && x.ToUserId == userId && x.IsActive && !x.IsClosed)
+                   .AsNoTracking()
+                   .ToListAsync(ct);
+
+        public Task<List<LedgerLine>> ListOpenForPairAsync(
+            int houseId, int fromUserId, int toUserId, DateTime asOf, CancellationToken ct = default)
+            => _ctx.LedgerLines
+                   .Where(x => x.HouseId == houseId
+                            && x.FromUserId == fromUserId
+                            && x.ToUserId == toUserId
+                            && x.IsActive
+                            && !x.IsClosed
+                            && x.CreatedAt <= asOf)
+                   .OrderBy(x => x.Id) // FIFO
+                   .AsNoTracking()
+                   .ToListAsync(ct);
+
+        public async Task SoftDeleteByExpenseIdAsync(int expenseId, CancellationToken ct = default)
         {
-            // EF Core 7+
-            return await _ctx.Set<LedgerLine>()
-                .Where(x => x.ExpenseId == expenseId && x.IsActive)
-                .ExecuteUpdateAsync(upd => upd
-                    .SetProperty(l => l.IsActive, l => false)
-                    .SetProperty(l => l.UpdatedAt, l => DateTime.UtcNow),
-                    ct);
+            var lines = await _ctx.LedgerLines.Where(l => l.ExpenseId == expenseId && l.IsActive).ToListAsync(ct);
+            if (lines.Count == 0) return;
+
+            foreach (var l in lines)
+            {
+                l.IsActive = false;
+                l.UpdatedAt = DateTime.UtcNow;
+            }
+
+            _ctx.LedgerLines.UpdateRange(lines);
+            await _ctx.SaveChangesAsync(ct);
         }
     }
 }

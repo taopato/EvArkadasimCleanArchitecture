@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Contexts;
 
@@ -11,9 +12,11 @@ using Persistence.Contexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250912082453_AddExpenseParentSelfRef")]
+    partial class AddExpenseParentSelfRef
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -208,16 +211,7 @@ namespace Persistence.Migrations
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<byte?>("DueDay")
-                        .HasColumnType("tinyint");
-
                     b.Property<int>("HouseId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("InstallmentCount")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("InstallmentIndex")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
@@ -250,9 +244,6 @@ namespace Persistence.Migrations
 
                     b.Property<string>("PersonalBreakdownJson")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("PlanStartMonth")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("PostDate")
                         .HasColumnType("datetime2");

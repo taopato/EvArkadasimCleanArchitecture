@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Contexts;
 
@@ -11,9 +12,11 @@ using Persistence.Contexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250907002022_Rename_PaymentAllocation_LedgerEntryId_to_LedgerLineId")]
+    partial class Rename_PaymentAllocation_LedgerEntryId_to_LedgerLineId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -208,16 +211,7 @@ namespace Persistence.Migrations
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<byte?>("DueDay")
-                        .HasColumnType("tinyint");
-
                     b.Property<int>("HouseId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("InstallmentCount")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("InstallmentIndex")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
@@ -237,9 +231,6 @@ namespace Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("ParentExpenseId")
-                        .HasColumnType("int");
-
                     b.Property<string>("ParticipantsJson")
                         .HasColumnType("nvarchar(max)");
 
@@ -250,9 +241,6 @@ namespace Persistence.Migrations
 
                     b.Property<string>("PersonalBreakdownJson")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("PlanStartMonth")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("PostDate")
                         .HasColumnType("datetime2");
@@ -284,8 +272,6 @@ namespace Persistence.Migrations
                     b.HasIndex("KaydedenUserId");
 
                     b.HasIndex("OdeyenUserId");
-
-                    b.HasIndex("ParentExpenseId");
 
                     b.HasIndex("RecurrenceBatchKey")
                         .HasDatabaseName("IX_Expenses_Batch");
@@ -536,11 +522,6 @@ namespace Persistence.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
                     b.Property<long>("LedgerLineId")
                         .HasColumnType("bigint");
 
@@ -776,17 +757,11 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.Expense", "ParentExpense")
-                        .WithMany("Children")
-                        .HasForeignKey("ParentExpenseId");
-
                     b.Navigation("House");
 
                     b.Navigation("KaydedenUser");
 
                     b.Navigation("OdeyenUser");
-
-                    b.Navigation("ParentExpense");
                 });
 
             modelBuilder.Entity("Domain.Entities.House", b =>
@@ -939,8 +914,6 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.Expense", b =>
                 {
-                    b.Navigation("Children");
-
                     b.Navigation("PersonalExpenses");
 
                     b.Navigation("Shares");

@@ -13,14 +13,14 @@ namespace Application.Features.Houses.Queries.GetSpendingOverview
         : IRequestHandler<GetSpendingOverviewQuery, SpendingOverviewDto>
     {
         private readonly IBillReadRepository _billRead;
-        private readonly ILedgerReadRepository _ledgerRead;
+        private readonly ILedgerLineRepository _ledgerRepo;
 
         public GetSpendingOverviewQueryHandler(
             IBillReadRepository billRead,
-            ILedgerReadRepository ledgerRead)
+            ILedgerLineRepository ledgerRepo)
         {
             _billRead = billRead;
-            _ledgerRead = ledgerRead;
+            _ledgerRepo = ledgerRepo;
         }
 
         public async Task<SpendingOverviewDto> Handle(GetSpendingOverviewQuery q, CancellationToken ct)
@@ -33,7 +33,7 @@ namespace Application.Features.Houses.Queries.GetSpendingOverview
                 Range = new SpendingOverviewDto.RangeInfo { From = from, To = to }
             };
 
-            // Utilities toplamları (Finalized Bills, CreatedAt range)
+            // 1) Faturalar: Finalized + CreatedAt aralığı
             var bills = await _billRead.Query()
                 .Where(b => b.HouseId == q.HouseId &&
                             b.Status == BillStatus.Finalized &&
@@ -45,11 +45,13 @@ namespace Application.Features.Houses.Queries.GetSpendingOverview
                 .GroupBy(x => x.UtilityType.ToString())
                 .ToDictionary(g => g.Key, g => g.Sum(v => v.Amount));
 
-            // Open balances (ledger)
-            var debts = await _ledgerRead.Query()
-                .Where(l => l.HouseId == q.HouseId && !l.IsClosed)
+            // 2) Açık borç/alacaklar (LedgerLine)
+            var lines = await _ledgerRepo.GetListAsync(
+                l => l.HouseId == q.HouseId && l.IsActive && !l.IsClosed, ct);
+
+            var debts = lines
                 .Select(l => new { l.FromUserId, l.ToUserId, Remaining = l.Amount - l.PaidAmount })
-                .ToListAsync(ct);
+                .ToList();
 
             dto.OpenBalances = debts
                 .GroupBy(x => x.FromUserId)
@@ -58,14 +60,15 @@ namespace Application.Features.Houses.Queries.GetSpendingOverview
                     UserId = g.Key,
                     DebtOpen = g.Sum(v => v.Remaining),
                     CreditOpen = debts.Where(d => d.ToUserId == g.Key).Sum(v => v.Remaining)
-                }).ToList();
+                })
+                .ToList();
 
-            // Şimdilik paymentsByUser, generalExpenses, recentExpenses boş
+            // 3) Diğer bölümler (şimdilik boş)
             dto.PaymentsByUser = new();
             dto.GeneralExpenses = new();
             dto.RecentExpenses = new();
 
-            // Recent bills
+            // 4) Son faturalar
             dto.RecentBills = await _billRead.Query()
                 .Where(b => b.HouseId == q.HouseId)
                 .OrderByDescending(b => b.CreatedAt)
@@ -76,7 +79,8 @@ namespace Application.Features.Houses.Queries.GetSpendingOverview
                     UtilityType = (int)b.UtilityType,
                     Month = b.Month,
                     Amount = b.Amount
-                }).ToListAsync(ct);
+                })
+                .ToListAsync(ct);
 
             return dto;
         }

@@ -1,24 +1,27 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Domain.Entities
 {
     public class LedgerLine
     {
-        public long Id { get; set; }
+        public long Id { get; set; }                  // ← int → long
 
         public int HouseId { get; set; }
         public int ExpenseId { get; set; }
-
-        // Borçlu → Alacaklı
         public int FromUserId { get; set; }
         public int ToUserId { get; set; }
 
-        public decimal Amount { get; set; } // 2 ondalık
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Amount { get; set; }
 
-        // Borcun hesaplamaya girdiği gün (UTC)
-        public DateTime PostDate { get; set; } = DateTime.UtcNow;
+        public DateTime PostDate { get; set; }
+        public bool IsActive { get; set; }
 
-        public bool IsActive { get; set; } = true;
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal PaidAmount { get; set; } = 0m;
+
+        public bool IsClosed { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }

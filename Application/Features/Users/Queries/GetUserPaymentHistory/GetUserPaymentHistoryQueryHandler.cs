@@ -3,58 +3,55 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Application.Services.Repositories;
-using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Users.Queries.GetUserPaymentHistory
 {
     public class GetUserPaymentHistoryQueryHandler
         : IRequestHandler<GetUserPaymentHistoryQuery, UserPaymentHistoryDto>
     {
-        private readonly ILedgerReadRepository _ledgerRead;
+        private readonly ILedgerLineRepository _ledgerRepo;
 
-        public GetUserPaymentHistoryQueryHandler(ILedgerReadRepository ledgerRead)
+        public GetUserPaymentHistoryQueryHandler(ILedgerLineRepository ledgerRepo)
         {
-            _ledgerRead = ledgerRead;
+            _ledgerRepo = ledgerRepo;
         }
 
         public async Task<UserPaymentHistoryDto> Handle(GetUserPaymentHistoryQuery q, CancellationToken ct)
         {
             var dto = new UserPaymentHistoryDto();
 
-            // Open balances
-            var openEntries = _ledgerRead.Query()
-                .Where(l => !l.IsClosed && (l.FromUserId == q.UserId || l.ToUserId == q.UserId));
+            // 1) Açık kalemler (kullanıcı borcu/alacağı)
+            var openList = await _ledgerRepo.GetListAsync(l =>
+                    !l.IsClosed &&
+                    (l.FromUserId == q.UserId || l.ToUserId == q.UserId) &&
+                    (!q.HouseId.HasValue || l.HouseId == q.HouseId.Value),
+                ct);
 
-            if (q.HouseId.HasValue)
-                openEntries = openEntries.Where(l => l.HouseId == q.HouseId.Value);
+            dto.OpenBalances.DebtOpen = openList.Where(x => x.FromUserId == q.UserId).Sum(x => x.Amount - x.PaidAmount);
+            dto.OpenBalances.CreditOpen = openList.Where(x => x.ToUserId == q.UserId).Sum(x => x.Amount - x.PaidAmount);
 
-            var openList = await openEntries
-                .Select(l => new { l.FromUserId, l.ToUserId, Remaining = l.Amount - l.PaidAmount })
-                .ToListAsync(ct);
+            // 2) Son hareketler (yalnız ledger – payments kısmı şimdilik boş)
+            var recent = await _ledgerRepo.GetListAsync(l =>
+                    (l.FromUserId == q.UserId || l.ToUserId == q.UserId) &&
+                    (!q.HouseId.HasValue || l.HouseId == q.HouseId.Value),
+                ct);
 
-            dto.OpenBalances.DebtOpen = openList.Where(x => x.FromUserId == q.UserId).Sum(x => x.Remaining);
-            dto.OpenBalances.CreditOpen = openList.Where(x => x.ToUserId == q.UserId).Sum(x => x.Remaining);
-
-            // Recent ledger (user borç/alacak kalemleri) – payments bölümü şimdilik boş
-            var lQuery = _ledgerRead.Query()
-                .Where(l => l.FromUserId == q.UserId || l.ToUserId == q.UserId);
-            if (q.HouseId.HasValue) lQuery = lQuery.Where(l => l.HouseId == q.HouseId.Value);
-
-            dto.Recent = await lQuery
+            dto.Recent = recent
                 .OrderByDescending(l => l.CreatedAt)
                 .Take(q.Limit)
                 .Select(l => new UserPaymentHistoryDto.HistoryItem
                 {
                     Type = "ledger",
-                    Id = l.Id,
+                    Id = (int)l.Id,                       // <-- cast eklendi
                     Date = l.CreatedAt,
                     Amount = l.Amount,
-                    ToUserId = l.ToUserId,
-                    Role = (l.FromUserId == q.UserId) ? "debt" : "credit",
+                    ToUserId = (int)l.ToUserId,           // <-- cast eklendi
+                    Role = ((int)l.FromUserId == q.UserId) ? "debt" : "credit", // <-- kıyas cast
                     Remaining = l.Amount - l.PaidAmount,
                     Closed = l.IsClosed,
-                    Note = l.Note
-                }).ToListAsync(ct);
+                    Note = null
+                })
+                .ToList();
 
             return dto;
         }

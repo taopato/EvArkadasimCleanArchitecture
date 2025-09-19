@@ -36,13 +36,11 @@ namespace Persistence
             services.AddScoped<IHouseRepository, EfHouseRepository>();
             services.AddScoped<IShareRepository, EfShareRepository>();
             services.AddAutoMapper(typeof(ExpenseMappingProfile).Assembly);
-            services.AddScoped<ILedgerEntryRepository, EfLedgerEntryRepository>();
             services.AddScoped<IBillDocumentRepository, EfBillDocumentRepository>();
             services.AddScoped<IPaymentAllocationRepository, EfPaymentAllocationRepository>();
             services.AddScoped<IBillReadRepository, EfBillReadRepository>();
             services.AddScoped<IUtilityBillRepository, EfUtilityBillRepository>();
             services.AddScoped<IPaymentReadRepository, EfPaymentReadRepository>();
-            services.AddScoped<ILedgerReadRepository, EfLedgerReadRepository>();
             services.AddScoped<IExpenseReadRepository, EfExpenseReadRepository>();
             services.AddScoped<ILedgerLineRepository, EfLedgerLineRepository>();
 

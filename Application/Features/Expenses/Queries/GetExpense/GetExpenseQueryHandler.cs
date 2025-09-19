@@ -1,5 +1,4 @@
-﻿// Application/Features/Expenses/Queries/GetExpense/GetExpenseQueryHandler.cs
-using MediatR;
+﻿using MediatR;
 using Application.Features.Expenses.Dtos;
 using Application.Services.Repositories;
 using AutoMapper;
@@ -31,6 +30,10 @@ namespace Application.Features.Expenses.Queries.GetExpense
             var e = await _repo.GetByIdAsync(request.ExpenseId)
                     ?? throw new KeyNotFoundException("Expense not found");
 
+            // 🔹 Soft-deleted ise görünmesin
+            if (!e.IsActive)
+                throw new KeyNotFoundException("Expense not found");
+
             var dto = _mapper.Map<ExpenseDetailDto>(e);
 
             // Kullanıcı adları
@@ -51,6 +54,11 @@ namespace Application.Features.Expenses.Queries.GetExpense
                 .ToList();
 
             dto.OrtakHarcamaTutari = e.OrtakHarcamaTutari;
+
+            // 🔹 Notu description'a yansıt
+            if (string.IsNullOrWhiteSpace(dto.Description))
+                dto.Description = e.Note ?? string.Empty;
+
             return dto;
         }
     }

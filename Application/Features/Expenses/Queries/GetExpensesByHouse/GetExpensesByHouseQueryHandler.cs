@@ -1,5 +1,4 @@
-﻿// Application/Features/Expenses/Queries/GetExpensesByHouse/GetExpensesByHouseQueryHandler.cs
-using MediatR;
+﻿using MediatR;
 using Application.Features.Expenses.Dtos;
 using Application.Services.Repositories;
 using AutoMapper;
@@ -31,6 +30,9 @@ namespace Application.Features.Expenses.Queries.GetExpensesByHouse
             var dtoList = new List<ExpenseListDto>();
             foreach (var e in list)
             {
+                // 🔹 Soft-deleted olanları listeleme
+                if (!e.IsActive) continue;
+
                 var dto = _mapper.Map<ExpenseListDto>(e);
                 var payer = await _userRepo.GetByIdAsync(e.OdeyenUserId);
                 var creator = await _userRepo.GetByIdAsync(e.KaydedenUserId);
@@ -38,6 +40,10 @@ namespace Application.Features.Expenses.Queries.GetExpensesByHouse
                 dto.OdeyenKullaniciAdi = payer is null ? "" : $"{payer.FirstName} {payer.LastName}";
                 dto.KaydedenKullaniciAdi = creator is null ? "" : $"{creator.FirstName} {creator.LastName}";
                 dto.KayitTarihi = e.CreatedDate;
+
+                // 🔹 Notu description'a yansıt
+                if (string.IsNullOrWhiteSpace(dto.Description))
+                    dto.Description = e.Note ?? string.Empty;
 
                 dtoList.Add(dto);
             }

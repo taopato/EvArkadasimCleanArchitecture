@@ -9,9 +9,9 @@ namespace Application.Features.Payments.Commands.AddPaymentWithAllocations
 
         public class AppliedItem
         {
-            public int LedgerEntryId { get; set; }
+            public int LedgerLineId { get; set; }
             public decimal Applied { get; set; }
-            public decimal RemainingOnEntry { get; set; }
+            public decimal RemainingOnLine { get; set; }
             public bool Closed { get; set; }
         }
     }

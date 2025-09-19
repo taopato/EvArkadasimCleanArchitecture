@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Contexts;
 
@@ -11,9 +12,11 @@ using Persistence.Contexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250906231446_Add_Expense_CurrencyCode_3")]
+    partial class Add_Expense_CurrencyCode_3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -208,16 +211,7 @@ namespace Persistence.Migrations
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<byte?>("DueDay")
-                        .HasColumnType("tinyint");
-
                     b.Property<int>("HouseId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("InstallmentCount")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("InstallmentIndex")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
@@ -237,9 +231,6 @@ namespace Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("ParentExpenseId")
-                        .HasColumnType("int");
-
                     b.Property<string>("ParticipantsJson")
                         .HasColumnType("nvarchar(max)");
 
@@ -250,9 +241,6 @@ namespace Persistence.Migrations
 
                     b.Property<string>("PersonalBreakdownJson")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("PlanStartMonth")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("PostDate")
                         .HasColumnType("datetime2");
@@ -284,8 +272,6 @@ namespace Persistence.Migrations
                     b.HasIndex("KaydedenUserId");
 
                     b.HasIndex("OdeyenUserId");
-
-                    b.HasIndex("ParentExpenseId");
 
                     b.HasIndex("RecurrenceBatchKey")
                         .HasDatabaseName("IX_Expenses_Batch");
@@ -384,13 +370,61 @@ namespace Persistence.Migrations
                     b.ToTable("Invitations");
                 });
 
+            modelBuilder.Entity("Domain.Entities.LedgerEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("BillId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FromUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("HouseId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Month")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ToUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UtilityType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HouseId", "FromUserId", "ToUserId", "CreatedAt");
+
+                    b.ToTable("LedgerEntries");
+                });
+
             modelBuilder.Entity("Domain.Entities.LedgerLine", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
@@ -438,8 +472,6 @@ namespace Persistence.Migrations
 
                     b.HasIndex("HouseId", "PostDate")
                         .HasDatabaseName("IX_Ledger_House_Post");
-
-                    b.HasIndex("HouseId", "FromUserId", "ToUserId", "CreatedAt");
 
                     b.HasIndex("HouseId", "FromUserId", "ToUserId", "PostDate")
                         .HasDatabaseName("IX_Ledger_House_FromTo");
@@ -536,20 +568,18 @@ namespace Persistence.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
+                    b.Property<int?>("LedgerEntryId")
+                        .HasColumnType("int");
 
-                    b.Property<long>("LedgerLineId")
-                        .HasColumnType("bigint");
+                    b.Property<int?>("LedgerLineId")
+                        .HasColumnType("int");
 
                     b.Property<int>("PaymentId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LedgerLineId");
+                    b.HasIndex("LedgerEntryId");
 
                     b.HasIndex("PaymentId");
 
@@ -776,17 +806,11 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.Expense", "ParentExpense")
-                        .WithMany("Children")
-                        .HasForeignKey("ParentExpenseId");
-
                     b.Navigation("House");
 
                     b.Navigation("KaydedenUser");
 
                     b.Navigation("OdeyenUser");
-
-                    b.Navigation("ParentExpense");
                 });
 
             modelBuilder.Entity("Domain.Entities.House", b =>
@@ -873,25 +897,6 @@ namespace Persistence.Migrations
                     b.Navigation("House");
                 });
 
-            modelBuilder.Entity("Domain.Entities.PaymentAllocation", b =>
-                {
-                    b.HasOne("Domain.Entities.LedgerLine", "LedgerLine")
-                        .WithMany()
-                        .HasForeignKey("LedgerLineId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Payment", "Payment")
-                        .WithMany()
-                        .HasForeignKey("PaymentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("LedgerLine");
-
-                    b.Navigation("Payment");
-                });
-
             modelBuilder.Entity("Domain.Entities.PersonalExpense", b =>
                 {
                     b.HasOne("Domain.Entities.Expense", "Expense")
@@ -939,8 +944,6 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.Expense", b =>
                 {
-                    b.Navigation("Children");
-
                     b.Navigation("PersonalExpenses");
 
                     b.Navigation("Shares");

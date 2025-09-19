@@ -1,11 +1,9 @@
-﻿// EvArkadasim.API/Program.cs
-
-using MediatR;
+﻿using MediatR;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Persistence;                // AddPersistenceServices uzantısını getirir
+using Persistence;
 using Core.Security.JWT;
 using Application.Features.Auths.Commands.SendVerificationCode;
 using Microsoft.EntityFrameworkCore;
@@ -13,45 +11,37 @@ using Persistence.Contexts;
 using Microsoft.OpenApi.Models;
 using Application.Services.Repositories;
 using Persistence.Repositories;
-using Application.Features.Houses.Profiles;
-using System.Reflection;
 using System.Text.Json.Serialization;
-
-// ⚠️ Bu namespace şu an projende yoksa derleme hatası verir, o yüzden yoruma aldım.
-// using Application.Features.RecurringCharges.Commands.CreateRecurringCharge;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1) Persistence (DbContext, Repos, MailService, JwtHelper, vs.)
 builder.Services.AddPersistenceServices(builder.Configuration);
 
-// ► REPO KAYITLARI (mevcut olanlar)
+// --- Repositories ---
 builder.Services.AddScoped<IExpenseRepository, EfExpenseRepository>();
 builder.Services.AddScoped<IPersonalExpenseRepository, EfPersonalExpenseRepository>();
 builder.Services.AddScoped<IShareRepository, EfShareRepository>();
 builder.Services.AddScoped<IPaymentRepository, EfPaymentRepository>();
-
+builder.Services.AddScoped<IHouseMemberRepository, EfHouseMemberRepository>();
+builder.Services.AddScoped<IInvitationRepository, EfInvitationRepository>();
+builder.Services.AddScoped<ILedgerLineRepository, EfLedgerLineRepository>();
 builder.Services.AddScoped<IRecurringChargeRepository, EfRecurringChargeRepository>();
 builder.Services.AddScoped<IChargeCycleRepository, EfChargeCycleRepository>();
 
-// ⭐ LedgerLines için DI kaydı (CreateIrregular / DeleteExpense soft-delete vb. kullanıyor)
-builder.Services.AddScoped<ILedgerLineRepository, EfLedgerLineRepository>(); // ⭐ eklendi
+builder.Services.AddHttpContextAccessor();
 
-// 2) MediatR — Application assembly’sini tara
-// (MediatR v11 uyumlu; SendVerificationCodeCommand Application assembly’sinde.)
-builder.Services.AddMediatR(typeof(SendVerificationCodeCommand).Assembly);
+// 2) MediatR — Application assembly’sini tara (V11 uyumlu kayıt)
+builder.Services.AddMediatR(typeof(Application.Features.Auths.Commands.SendVerificationCode.SendVerificationCodeCommand).Assembly);
 
 // 3) AutoMapper
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // 4) FluentValidation
-builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(SendVerificationCodeCommand).Assembly);
 
 // 5) JWT
-var tokenOptions = builder.Configuration
-    .GetSection("TokenOptions")
-    .Get<TokenOptions>();
-
+var tokenOptions = builder.Configuration.GetSection("TokenOptions").Get<TokenOptions>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
     {
@@ -63,20 +53,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = tokenOptions.Issuer,
             ValidAudience = tokenOptions.Audience,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(tokenOptions.SecurityKey))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenOptions.SecurityKey))
         };
     });
 
-// 6) MVC, Swagger, CORS
-builder.Services.AddControllers();
+// 6) MVC + JSON + Swagger + CORS
+builder.Services.AddControllers()
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "EvArkadasim API", Version = "v1" });
 
-    // JWT Bearer için Swagger ayarları
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -84,8 +78,9 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "JWT Bearer token. \"Bearer {token}\" formatında gönderin."
+        Description = "JWT token'ınızı 'Bearer {token}' şeklinde girin."
     });
+
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -94,21 +89,18 @@ builder.Services.AddSwaggerGen(c =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id   = "Bearer"
+                    Id = "Bearer"
                 },
                 Scheme = "Bearer",
-                Name   = "Bearer",
-                In     = ParameterLocation.Header,
+                Name = "Bearer",
+                In = ParameterLocation.Header
             },
             Array.Empty<string>()
         }
     });
 
-    // Aynı isimli sınıflardan (farklı namespace) doğan schema çakışmalarını engelle
-    c.CustomSchemaIds(t => t.FullName);                 // ⭐ eklendi
-
-    // Olası aynı route + aynı HTTP verb çakışmalarında ilkini seç (Swagger JSON üretebilsin)
-    c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First()); // ⭐ eklendi
+    c.CustomSchemaIds(t => t.FullName);
+    c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 });
 
 builder.Services.AddCors(p =>
@@ -119,51 +111,36 @@ builder.Services.AddCors(p =>
         .AllowAnyMethod());
 });
 
-builder.Services
-    .AddControllers()
-    .AddJsonOptions(o =>
-    {
-        // enum'ları hem sayı hem string olarak parse et
-        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-
-        // Döngüsel referanslardan kaynaklı Swagger/JSON hatalarını önle
-        o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;            // ⭐ eklendi
-        o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull; // ⭐ eklendi
-    });
-
-///////////////////////////////////
-// (Mevcut kayıtların aynen bırakıldı)
-builder.Services.AddScoped<IExpenseRepository, EfExpenseRepository>();
-builder.Services.AddScoped<IPersonalExpenseRepository, EfPersonalExpenseRepository>();
-builder.Services.AddScoped<IShareRepository, EfShareRepository>();
-builder.Services.AddScoped<IHouseMemberRepository, EfHouseMemberRepository>();
-builder.Services.AddAutoMapper(typeof(Program)); // Bu varsa sorun değil
-builder.Services.AddAutoMapper(typeof(HouseMappingProfile).Assembly);
-builder.Services.AddScoped<IInvitationRepository, EfInvitationRepository>();
-builder.Services.AddAutoMapper(typeof(Program));
-builder.Services.AddAutoMapper(typeof(HouseMappingProfile).Assembly);
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddAutoMapper(Assembly.Load("Application"));
-///////////////////////////////////
+// 7) Kestrel: HTTP 5118 + HTTPS 7118
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(5118); // HTTP
+    options.ListenAnyIP(7118, listen => listen.UseHttps()); // HTTPS
+});
 
 var app = builder.Build();
 
-// 7) Otomatik migration
+// 8) Otomatik migration
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
 
-// 8) Middleware
+// 9) Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseStaticFiles(); // wwwroot altını servis eder
 
-app.UseHttpsRedirection();
+// Dikkat: HTTPS yönlendirmesi SADECE prod'da
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseStaticFiles();
 
 app.UseCors("AllowAll");
 

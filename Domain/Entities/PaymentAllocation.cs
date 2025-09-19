@@ -1,14 +1,19 @@
-﻿using System;
-
-namespace Domain.Entities
+﻿namespace Domain.Entities
 {
-    // Tek bir Payment ile birden fazla LedgerEntry kısmi/tam kapatma
     public class PaymentAllocation
     {
         public int Id { get; set; }
-        public int PaymentId { get; set; }     // mevcut Payments tablosuna FK
-        public int LedgerEntryId { get; set; } // kapatılan borç kalemi
-        public decimal Amount { get; set; }    // bu Allocation ile kapatılan tutar
+
+        public int PaymentId { get; set; }
+        public Payment Payment { get; set; } = null!;
+
+        // LedgerLineId bizde long
+        public long LedgerLineId { get; set; }
+        public LedgerLine LedgerLine { get; set; } = null!;
+
+        public decimal Amount { get; set; }
+
+        // ⬇️ EKLENDİ: DB'deki NOT NULL kolona karşılık
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

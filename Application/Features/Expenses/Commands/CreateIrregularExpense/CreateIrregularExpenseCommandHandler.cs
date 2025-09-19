@@ -113,7 +113,7 @@ namespace Application.Features.Expenses.Commands.CreateIrregularExpense
             foreach (var line in ledgerItems)
                 await _ledgerRepo.AddAsync(line, ct);
 
-            // Ledger eklemelerini güvenle kaydet
+            // her AddAsync çağrısından sonra değil, en sonda:
             await _ledgerRepo.SaveChangesAsync(ct);
 
             var resp = new CreatedExpenseSummaryDto

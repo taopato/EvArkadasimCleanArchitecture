@@ -10,12 +10,10 @@ namespace Application.Features.Bills.Commands.FinalizeBill
     public class FinalizeBillCommandHandler : IRequestHandler<FinalizeBillCommand, bool>
     {
         private readonly IUtilityBillRepository _billRepo;
-        private readonly ILedgerEntryRepository _ledgerRepo;
 
-        public FinalizeBillCommandHandler(IUtilityBillRepository billRepo, ILedgerEntryRepository ledgerRepo)
+        public FinalizeBillCommandHandler(IUtilityBillRepository billRepo)
         {
             _billRepo = billRepo;
-            _ledgerRepo = ledgerRepo;
         }
 
         public async Task<bool> Handle(FinalizeBillCommand request, CancellationToken ct)
@@ -47,7 +45,6 @@ namespace Application.Features.Bills.Commands.FinalizeBill
                 }).ToList();
 
             if (entries.Any())
-                await _ledgerRepo.AddRangeAsync(entries);
 
             bill.Status = BillStatus.Finalized;
             bill.FinalizedAt = System.DateTime.UtcNow;

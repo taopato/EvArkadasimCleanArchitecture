@@ -14,7 +14,6 @@ using Core.Utilities.Results;
 using Application.Features.Expenses.Commands.CreateIrregularExpense;
 using Application.Features.Houses.Queries.GetHouseMembers;
 using Application.Features.Houses.Queries.GetUserHouses;
-using Application.Features.Expenses.Queries.GetCharges;
 
 namespace WebAPI.Controllers
 {
@@ -30,7 +29,7 @@ namespace WebAPI.Controllers
             _mediator = mediator;
         }
 
-        // 1) Mevcut listeleme (Dto listesi döner)
+        // 1) Mevcut listeleme
         [HttpGet]
         public async Task<IActionResult> GetList()
         {
@@ -43,7 +42,7 @@ namespace WebAPI.Controllers
             return Ok(result.Data);
         }
 
-        // 2) Mevcut oluşturma (CreatedExpenseResponseDto döner)
+        // 2) Oluşturma (tek uç)
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateExpenseCommand command)
         {
@@ -51,7 +50,7 @@ namespace WebAPI.Controllers
             return CreatedAtAction(nameof(GetList), new { id = result.Id }, result);
         }
 
-        // 3) Mevcut AddExpense alias’ı
+        // 3) Eski alias
         [HttpPost("AddExpense")]
         public async Task<IActionResult> AddExpense([FromBody] CreateExpenseCommand command)
         {
@@ -59,8 +58,7 @@ namespace WebAPI.Controllers
             return CreatedAtAction(nameof(AddExpense), new { id = result.Id }, result);
         }
 
-        // ──────────────────────────────────────────────────────
-        // 4) Yeni: Harcama Listesi by House (wrapper ile döner)
+        // 4) House bazlı liste (FE bunu kullanıyor)
         [HttpGet("GetExpenses/{houseId}")]
         public async Task<IActionResult> GetExpenses(int houseId)
         {
@@ -69,7 +67,7 @@ namespace WebAPI.Controllers
             return Ok(new { isSuccess = true, data });
         }
 
-        // 5) Yeni: Harcama Detayı by Id
+        // 5) Detay
         [HttpGet("GetExpense/{expenseId}")]
         public async Task<IActionResult> GetExpense(int expenseId)
         {
@@ -78,7 +76,7 @@ namespace WebAPI.Controllers
             return Ok(new { isSuccess = true, data });
         }
 
-        // 6) Yeni: Harcama Silme
+        // 6) Sil
         [HttpDelete("DeleteExpense/{expenseId}")]
         public async Task<IActionResult> DeleteExpense(int expenseId)
         {
@@ -87,7 +85,7 @@ namespace WebAPI.Controllers
             return Ok(new { isSuccess = true, message = "Harcama başarıyla silindi." });
         }
 
-        // 7) Yeni: Harcama Güncelleme
+        // 7) Güncelle
         [HttpPut("UpdateExpense/{expenseId}")]
         public async Task<IActionResult> UpdateExpense(
             int expenseId,
@@ -101,6 +99,7 @@ namespace WebAPI.Controllers
             return Ok(new { isSuccess = true, message = "Harcama başarıyla güncellendi." });
         }
 
+        // 8) Düzensiz
         [HttpPost("CreateIrregular")]
         public async Task<IActionResult> CreateIrregular([FromBody] CreateIrregularExpenseRequest model)
         {
@@ -108,6 +107,7 @@ namespace WebAPI.Controllers
             return Ok(result);
         }
 
+        // 9) Yardımcı uçlar
         [HttpGet("UserHouses/{userId:int}")]
         public async Task<IActionResult> UserHouses(int userId)
         {
@@ -122,13 +122,6 @@ namespace WebAPI.Controllers
             var members = await _mediator.Send(new GetHouseMembersQuery { HouseId = houseId });
             if (!members.Success) return BadRequest(members.Message);
             return Ok(members.Data);
-        }
-
-        [HttpGet("~/api/Charges")]
-        public async Task<IActionResult> Charges([FromQuery] int houseId, [FromQuery] string? period, CancellationToken ct)
-        {
-            var data = await _mediator.Send(new GetChargesQuery { HouseId = houseId, Period = period }, ct);
-            return Ok(data);
         }
     }
 }

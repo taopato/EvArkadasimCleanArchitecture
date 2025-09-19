@@ -1,5 +1,4 @@
-﻿// Application/Features/Expenses/Commands/DeleteExpense/DeleteExpenseCommandHandler.cs
-using MediatR;
+﻿using MediatR;
 using Application.Services.Repositories;
 
 namespace Application.Features.Expenses.Commands.DeleteExpense
@@ -24,9 +23,11 @@ namespace Application.Features.Expenses.Commands.DeleteExpense
             e.IsActive = false;
             e.UpdatedAt = DateTime.UtcNow;
             await _expenseRepo.UpdateAsync(e);
+            await _expenseRepo.SaveChangesAsync();
 
             // Ledger satırlarını da pasif yap (varsa)
             await _ledgerRepo.SoftDeleteByExpenseIdAsync(e.Id, ct);
+            await _ledgerRepo.SaveChangesAsync();
 
             return Unit.Value;
         }

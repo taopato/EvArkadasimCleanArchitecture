@@ -25,13 +25,16 @@ namespace Application.Features.Expenses.Profiles
 
             CreateMap<Expense, ExpenseListDto>()
                 .ForMember(d => d.Tur, m => m.MapFrom(s => s.Tur))
-                .ForMember(d => d.KayitTarihi, m => m.MapFrom(s => s.KayitTarihi));
+                .ForMember(d => d.KayitTarihi, m => m.MapFrom(s => s.KayitTarihi))
+                // 🔹 yeni metadata alanları isimle eşleştiği için ekstra map gerekmiyor
+                // .ForMember(d => d.PlanStartMonth, m => m.MapFrom(s => s.PlanStartMonth)) vs. Gerek yok; isimler aynı.
+                ;
 
             CreateMap<Expense, ExpenseDetailDto>()
                 .ForMember(d => d.Tur, m => m.MapFrom(s => s.Tur))
                 .ForMember(d => d.KayitTarihi, m => m.MapFrom(s => s.KayitTarihi));
 
-            // Command -> Entity (create)
+            // Command -> Entity (single akış için)
             CreateMap<CreateExpenseCommand, Expense>()
                 .ForMember(d => d.Tur, m => m.MapFrom(s => s.Tur))
                 .ForMember(d => d.Tutar, m => m.MapFrom(s => s.Tutar))

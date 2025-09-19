@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Application.Features.Expenses.Dtos
 {
@@ -16,6 +17,12 @@ namespace Application.Features.Expenses.Dtos
         public int OdeyenUserId { get; set; }
         public int KaydedenUserId { get; set; }
         public DateTime KayitTarihi { get; set; }
-        // (Opsiyonel ama faydalı)
+
+        // 🔹 Plan/Taksit metadata (opsiyonel ama FE için faydalı)
+        public int? ParentExpenseId { get; set; }
+        public int? InstallmentIndex { get; set; }
+        public int? InstallmentCount { get; set; }
+        public DateTime? PlanStartMonth { get; set; }
+        public byte? DueDay { get; set; }
     }
 }

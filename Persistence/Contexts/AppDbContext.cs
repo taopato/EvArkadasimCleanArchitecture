@@ -22,7 +22,9 @@ namespace Persistence.Contexts
         public DbSet<Bill> Bills { get; set; }
         public DbSet<BillShare> BillShares { get; set; }
         public DbSet<BillDocument> BillDocuments { get; set; }
-        public DbSet<LedgerEntry> LedgerEntries { get; set; }
+
+        // ✔ LedgerLine kullanıyoruz (LedgerEntry yerine)
+        public DbSet<LedgerLine> LedgerLines { get; set; }
         public DbSet<PaymentAllocation> PaymentAllocations { get; set; }
 
         public DbSet<RecurringCharge> RecurringCharges { get; set; } = null!;
@@ -35,10 +37,8 @@ namespace Persistence.Contexts
             // Expense: precision and restrict cascade for two user FKs
             modelBuilder.Entity<Expense>(eb =>
             {
-                eb.Property(e => e.Tutar)
-                  .HasPrecision(18, 2);
-                eb.Property(e => e.OrtakHarcamaTutari)
-                  .HasPrecision(18, 2);
+                eb.Property(e => e.Tutar).HasPrecision(18, 2);
+                eb.Property(e => e.OrtakHarcamaTutari).HasPrecision(18, 2);
 
                 eb.HasOne(e => e.OdeyenUser)
                   .WithMany()
@@ -54,37 +54,31 @@ namespace Persistence.Contexts
             // Payment: precision and restrict cascade
             modelBuilder.Entity<Payment>(pb =>
             {
-                pb.Property(p => p.Tutar)
-                  .HasPrecision(18, 2);
+                pb.Property(p => p.Tutar).HasPrecision(18, 2);
 
                 // Enum int olarak saklanır, default BankTransfer
                 pb.Property(p => p.PaymentMethod)
                   .HasConversion<int>()
                   .HasDefaultValue(PaymentMethod.BankTransfer);
 
-                // YENİ: PaymentStatus enum mapping
+                // PaymentStatus enum mapping
                 pb.Property(p => p.Status)
                   .HasConversion<int>()
                   .HasDefaultValue(PaymentStatus.Pending);
 
-                // DekontUrl non-nullable kalıyor; sadece max length belirledik
-                pb.Property(p => p.DekontUrl)
-                  .HasMaxLength(400);
-
+                pb.Property(p => p.DekontUrl).HasMaxLength(400);
             });
 
             // PersonalExpense: precision
             modelBuilder.Entity<PersonalExpense>(peb =>
             {
-                peb.Property(pe => pe.Tutar)
-                   .HasPrecision(18, 2);
+                peb.Property(pe => pe.Tutar).HasPrecision(18, 2);
             });
 
             // Share: precision
             modelBuilder.Entity<Share>(sb =>
             {
-                sb.Property(s => s.PaylasimTutar)
-                  .HasPrecision(18, 2);
+                sb.Property(s => s.PaylasimTutar).HasPrecision(18, 2);
             });
 
             modelBuilder.Entity<HouseMember>()
@@ -150,7 +144,8 @@ namespace Persistence.Contexts
                 eb.Property(x => x.FilePathOrUrl).HasMaxLength(1024);
             });
 
-            modelBuilder.Entity<LedgerEntry>(le =>
+            // ✔ LedgerLine (Amount/PaidAmount precision + index)
+            modelBuilder.Entity<LedgerLine>(le =>
             {
                 le.Property(x => x.Amount).HasColumnType("decimal(18,2)");
                 le.Property(x => x.PaidAmount).HasColumnType("decimal(18,2)");
@@ -160,19 +155,20 @@ namespace Persistence.Contexts
             modelBuilder.Entity<PaymentAllocation>(pa =>
             {
                 pa.Property(x => x.Amount).HasColumnType("decimal(18,2)");
-                // Payment tablonuzun adı "Payments" ise:
                 pa.HasIndex(x => x.PaymentId);
-                pa.HasIndex(x => x.LedgerEntryId);
+                // ⬇️ default değer (DB tarafı)
+                pa.Property(x => x.CreatedAt)
+                  .HasDefaultValueSql("GETUTCDATE()");
             });
-            ///////////////////////////////
+
+            // Recurring / ChargeCycle
             modelBuilder.Entity<RecurringCharge>(b =>
             {
                 b.HasKey(x => x.Id);
                 b.Property(x => x.Type).HasConversion<int>();
                 b.Property(x => x.AmountMode).HasConversion<int>();
                 b.Property(x => x.SplitPolicy).HasConversion<int>();
-                b.Property(x => x.FixedAmount).HasPrecision(18, 2);   // ⬅️ eklendi
-
+                b.Property(x => x.FixedAmount).HasPrecision(18, 2);
             });
 
             modelBuilder.Entity<ChargeCycle>(b =>
@@ -180,8 +176,8 @@ namespace Persistence.Contexts
                 b.HasKey(x => x.Id);
                 b.Property(x => x.Status).HasConversion<int>();
                 b.HasIndex(x => new { x.ContractId, x.Period }).IsUnique();
-                b.Property(x => x.TotalAmount).HasPrecision(18, 2);   // ⬅️ eklendi
-                b.Property(x => x.FundedAmount).HasPrecision(18, 2);  // ⬅️ eklendi
+                b.Property(x => x.TotalAmount).HasPrecision(18, 2);
+                b.Property(x => x.FundedAmount).HasPrecision(18, 2);
             });
 
             modelBuilder.Entity<Payment>(b =>
@@ -191,10 +187,30 @@ namespace Persistence.Contexts
                  .HasForeignKey(p => p.ChargeId)
                  .OnDelete(DeleteBehavior.Restrict);
             });
-            ///////////////////////////////
+
+            // Apply external configurations (Expense/LedgerLine)
             modelBuilder.ApplyConfiguration(new ExpenseConfiguration());
             modelBuilder.ApplyConfiguration(new LedgerLineConfiguration());
 
+            // PaymentAllocation ↔ LedgerLine (FK: LedgerLineId - long)
+            modelBuilder.Entity<PaymentAllocation>(b =>
+            {
+                b.HasKey(x => x.Id);
+
+                b.HasOne(x => x.Payment)
+                 .WithMany()
+                 .HasForeignKey(x => x.PaymentId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.LedgerLine)
+                 .WithMany()
+                 .HasForeignKey(x => x.LedgerLineId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<PaymentAllocation>(pa =>
+            {
+                pa.Property(x => x.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            });
 
         }
     }
